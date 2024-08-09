@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.css": "/Blockchain/static/css/main.c9b65479.css",
-    "main.js": "/Blockchain/static/js/main.01f1363f.js",
-    "index.html": "/Blockchain/index.html",
-    "main.c9b65479.css.map": "/Blockchain/static/css/main.c9b65479.css.map",
-    "main.01f1363f.js.map": "/Blockchain/static/js/main.01f1363f.js.map"
+    "main.css": "/bts.roeinizri.com/static/css/main.c9b65479.css",
+    "main.js": "/bts.roeinizri.com/static/js/main.01f1363f.js",
+    "index.html": "/bts.roeinizri.com/index.html",
+    "main.c9b65479.css.map": "/bts.roeinizri.com/static/css/main.c9b65479.css.map",
+    "main.01f1363f.js.map": "/bts.roeinizri.com/static/js/main.01f1363f.js.map"
   },
   "entrypoints": [
     "static/css/main.c9b65479.css",
