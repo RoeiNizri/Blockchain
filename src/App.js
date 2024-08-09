@@ -1,25 +1,315 @@
-import logo from './logo.svg';
+import React, { useState, useEffect, useCallback } from 'react';
+import TradingChart from './components/TradingChart';
+import OrderBook from './components/OrderBook';
+import Wallet from './components/Wallet';
+import { getCryptoPrice, getCryptoData } from './services/cryptoService'; // Added getCryptoData
+import { connectWebSocket } from './services/webSocketService';
 import './App.css';
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+const App = () => {
+    const [wallet, setWallet] = useState({
+        USDT: 1000000,
+        BTC: 0,
+        ETH: 0
+    });
+    const [orders, setOrders] = useState([]);
+    const [price, setPrice] = useState({
+        BTC: 0,
+        ETH: 0
+    });
+    const [limitPrice, setLimitPrice] = useState({
+        BTC: 0,
+        ETH: 0
+    });
+    const [amount, setAmount] = useState(0);
+    const [orderType, setOrderType] = useState('market');
+    const [selectedSymbol, setSelectedSymbol] = useState('BTC');
+    const [recommendation, setRecommendation] = useState(''); // Added for recommendation
+
+    useEffect(() => {
+        const savedWallet = localStorage.getItem('wallet');
+        const savedOrders = localStorage.getItem('orders');
+        if (savedWallet) setWallet(JSON.parse(savedWallet));
+        if (savedOrders) setOrders(JSON.parse(savedOrders));
+    }, []);
+
+    useEffect(() => {
+        localStorage.setItem('wallet', JSON.stringify(wallet));
+        localStorage.setItem('orders', JSON.stringify(orders));
+    }, [wallet, orders]);
+
+    useEffect(() => {
+        const fetchInitialPrices = async () => {
+            try {
+                const prices = await getCryptoPrice(['bitcoin', 'ethereum'], ['usd']);
+                setPrice({
+                    BTC: prices.bitcoin.usd,
+                    ETH: prices.ethereum.usd
+                });
+
+// Fetch data for recommendation
+const cryptoData = await getCryptoData(selectedSymbol === 'BTC' ? 'bitcoin' : 'ethereum');
+if (cryptoData && cryptoData[0]) {
+    const data = cryptoData[0];
+    const volumeMultiplier = data.total_volume / data.prev_24h_volume; // Assuming you have the previous volume data
+    const shortTermMA = data.short_term_moving_average; // E.g., 50-day
+    const longTermMA = data.long_term_moving_average; // E.g., 200-day
+    const rsi = data.relative_strength_index; // Assuming RSI is provided in the data
+    let recommendation = '';
+    let reasons = [];
+
+    // Volume Spike Check
+    if (volumeMultiplier >= 5) {
+        reasons.push('High volume spike detected');
+    }
+
+    // Moving Average Crossover Check
+    if (shortTermMA > longTermMA) {
+        reasons.push('Golden Cross detected');
+    } else if (shortTermMA < longTermMA) {
+        reasons.push('Death Cross detected');
+    }
+
+    // RSI Check (Overbought/Oversold conditions)
+    if (rsi >= 70) {
+        reasons.push('RSI indicates overbought conditions');
+    } else if (rsi <= 30) {
+        reasons.push('RSI indicates oversold conditions');
+    }
+
+    // Price Change Check
+    if (data.price_change_percentage_24h >= 5) {
+        reasons.push('Price increased by 5% or more in the last 24 hours');
+    } else if (data.price_change_percentage_24h <= -5) {
+        reasons.push('Price decreased by 5% or more in the last 24 hours');
+    }
+
+    // Support and Resistance Levels (if available)
+    if (data.price > data.resistance_level) {
+        reasons.push('Price broke above resistance level');
+    } else if (data.price < data.support_level) {
+        reasons.push('Price dropped below support level');
+    }
+
+    // Decision Logic
+    if (reasons.includes('Golden Cross detected') || 
+        reasons.includes('Price increased by 5% or more in the last 24 hours') || 
+        reasons.includes('High volume spike detected') ||
+        reasons.includes('Price broke above resistance level')) {
+        
+        recommendation = `BUY - ${reasons.join(', ')}`;
+    } else if (reasons.includes('Death Cross detected') || 
+               reasons.includes('Price decreased by 5% or more in the last 24 hours') || 
+               reasons.includes('RSI indicates overbought conditions') ||
+               reasons.includes('Price dropped below support level')) {
+        
+        recommendation = `SELL - ${reasons.join(', ')}`;
+    } else {
+        recommendation = `HOLD - ${reasons.length > 0 ? reasons.join(', ') : 'No significant signals detected'}`;
+    }
+
+    setRecommendation(recommendation);
 }
+} catch (error) {
+    console.error('Error fetching initial prices or recommendation data:', error);
+}
+};
+
+        fetchInitialPrices();
+    }, [selectedSymbol]);
+
+    const resetWallet = () => {
+        const initialWallet = {
+            USDT: 1000000,
+            BTC: 0,
+            ETH: 0
+        };
+        setWallet(initialWallet);
+        setOrders([]);
+        localStorage.setItem('wallet', JSON.stringify(initialWallet));
+        localStorage.setItem('orders', JSON.stringify([]));
+    };
+
+    const checkLimitOrders = useCallback((currentPrices) => {
+        let ordersChanged = false;
+        const newWallet = { ...wallet };
+        const updatedOrders = orders.map((order) => {
+            if (order.orderType === 'limit' && order.status === 'PENDING') {
+                const symbol = order.symbol.split('/')[0];
+                const currentPrice = currentPrices[symbol];
+                const total = order.price * order.amount;
+    
+                if (order.type === 'buy' && currentPrice <= order.price && newWallet.USDT >= total) {
+                    newWallet.USDT -= total;
+                    newWallet[symbol] += order.amount;
+                    ordersChanged = true;
+                    return { ...order, status: 'APPROVED' };
+                } else if (order.type === 'sell' && currentPrice >= order.price && newWallet[symbol] >= order.amount) {
+                    newWallet.USDT += total;
+                    newWallet[symbol] -= order.amount;
+                    ordersChanged = true;
+                    return { ...order, status: 'APPROVED' };
+                }
+            }
+            return order;
+        });
+    
+        if (ordersChanged) {
+            setWallet(newWallet);
+            setOrders(updatedOrders);
+        }
+    }, [wallet, orders]);
+       
+
+// Handles price updates and checks limit orders
+useEffect(() => {
+    // Ensure the WebSocket connects only after the component has mounted
+    const socket = connectWebSocket((data) => {
+        const symbolData = data[selectedSymbol];
+        if (symbolData) {
+            const currentPrice = parseFloat(symbolData.p).toFixed(2);
+            setPrice((prevPrice) => ({
+                ...prevPrice,
+                [selectedSymbol]: currentPrice
+            }));
+
+            // Check limit orders only when prices are updated
+            checkLimitOrders({ [selectedSymbol]: parseFloat(currentPrice) });
+        }
+    });
+
+    // Handle WebSocket errors
+    socket.onerror = (error) => {
+        console.error('WebSocket error:', error);
+    };
+
+    // Ensure the WebSocket connection is properly closed when the component unmounts
+    return () => {
+        if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
+            socket.close();
+        }
+    };
+}, [selectedSymbol, checkLimitOrders]);
+    
+const handleOrder = (type) => {
+    const orderPrice = parseFloat(orderType === 'market' ? price[selectedSymbol] : limitPrice[selectedSymbol] || 0);
+    const total = orderPrice * amount;
+
+    if (amount <= 0) {
+        alert('Amount must be positive!');
+        return;
+    }
+
+    const newWallet = { ...wallet };
+    const newOrder = {
+        type,
+        symbol: `${selectedSymbol}/USDT`,
+        price: orderPrice, // Store the correct price, whether it's market or limit
+        amount,
+        time: new Date().toISOString(),
+        orderType,
+        status: 'PENDING' // Default status as PENDING
+    };
+
+    if (orderType === 'market') {
+        // Immediately execute market orders
+        if (type === 'buy' && newWallet.USDT >= total) {
+            newWallet.USDT -= total;
+            newWallet[selectedSymbol] += amount;
+            newOrder.status = 'APPROVED';
+        } else if (type === 'sell' && newWallet[selectedSymbol] >= amount) {
+            newWallet.USDT += total;
+            newWallet[selectedSymbol] -= amount;
+            newOrder.status = 'APPROVED';
+        } else {
+            alert('Insufficient funds!');
+            return;
+        }
+    } else if (orderType === 'limit') {
+        // Limit orders will be handled later when price conditions are met
+        if ((type === 'buy' && newWallet.USDT < total) || (type === 'sell' && newWallet[selectedSymbol] < amount)) {
+            alert('Insufficient funds for limit order!');
+            return;
+        }
+    }
+
+    setWallet(newWallet);
+    setOrders([...orders, newOrder]);
+};
+
+
+    return (
+        <div className="App">
+            <h1>Demo Trading System</h1>
+            <div className="main-content">
+                <Wallet wallet={wallet} resetWallet={resetWallet} />
+                <div className="order-form">
+                    <h2>Place Order</h2>
+                    <label>
+                        Order Type:
+                        <select value={orderType} onChange={e => setOrderType(e.target.value)}>
+                            <option value="market">Market</option>
+                            <option value="limit">Limit</option>
+                        </select>
+                    </label>
+                    <label>
+                        Cryptocurrency:
+                        <select value={selectedSymbol} onChange={e => setSelectedSymbol(e.target.value)}>
+                            <option value="BTC">BTC</option>
+                            <option value="ETH">ETH</option>
+                        </select>
+                    </label>
+                    <label>
+    Price:
+    <input 
+        type="number" 
+        value={orderType === 'market' ? price[selectedSymbol] : limitPrice[selectedSymbol] || price[selectedSymbol]} 
+        onChange={e => {
+            if (orderType === 'limit') {
+                setLimitPrice({ ...limitPrice, [selectedSymbol]: Number(e.target.value) });
+            }
+        }} 
+        disabled={orderType === 'market'} 
+    />
+</label>
+
+                    <label>
+                        Amount: 
+                        <input 
+                            type="number" 
+                            value={amount} 
+                            onChange={e => setAmount(Math.max(Number(e.target.value), 0))} 
+                        />
+                    </label>
+                    <label>
+    Total: 
+    <input 
+        type="number" 
+        value={((limitPrice[selectedSymbol] || price[selectedSymbol]) || 0) * amount} 
+        readOnly 
+    />
+</label>
+
+                    <div className="order-buttons">
+                        <button className="buy-button" onClick={() => handleOrder('buy')}>Buy {selectedSymbol}</button>
+                        <button className="sell-button" onClick={() => handleOrder('sell')}>Sell {selectedSymbol}</button>
+                    </div>
+                </div>
+                {recommendation && (
+                    <div className={`recommendation ${recommendation.startsWith('BUY') ? 'recommendation-buy' : recommendation.startsWith('SELL') ? 'recommendation-sell' : 'recommendation-hold'}`}>
+    <h3>{recommendation.split(' - ')[0]}</h3>
+    <div>
+        {recommendation.split(' - ')[1]?.split(', ').map((reason, index) => (
+            <div key={index}>{`${index + 1}. ${reason}`}</div>
+        ))}
+    </div>
+</div>          
+                )}
+            </div>
+            <TradingChart symbol={`BINANCE:${selectedSymbol}USDT`} orders={orders} />
+            <OrderBook orders={orders} prices={price} />
+        </div>
+    );
+};
 
 export default App;
