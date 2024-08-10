@@ -7,7 +7,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: #121212;
   color: #f5f5f5;
+  align-items: center;
   overflow-x: hidden; /* Prevent horizontal scrolling */
+  justify-content: center;
 }
 
 /* Code Block Styles */
@@ -18,11 +20,8 @@ code {
 /* App Styles */
 .App {
   text-align: center;
-  min-height: 100vh;
   padding: 20px;
-  display: flex;
   flex-direction: column;
-  align-items: center;
   justify-content: center;
 }
 
@@ -44,7 +43,7 @@ code {
   max-width: 100%; /* Ensure it fits on smaller screens */
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
-  margin: 10px; /* Add some margin for better spacing on mobile */
+  margin: 10px auto;
 }
 
 .order-form:hover, .wallet-container:hover, .order-book-container:hover, .recommendation:hover {
@@ -62,7 +61,6 @@ code {
 .order-form label, .order-book-item {
   display: block;
   margin-bottom: 10px;
-  font-weight: bold;
 }
 
 .order-form input, .order-form select {
@@ -169,6 +167,7 @@ code {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
   margin-bottom: 20px;
+  align-items: center;
 }
 
 .order-book-container:hover {
@@ -191,7 +190,7 @@ code {
 .order-book-item {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 10px;
   font-size: 18px;
 }
@@ -228,45 +227,41 @@ code {
   color: #f39c12;
 }
 
-/* Responsive Styles for Mobile */
 @media (max-width: 768px) {
-  body {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh; /* Ensure the entire page is vertically centered */
-  }
-
-  .App {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 0; /* Remove extra padding */
-    margin: 0; /* Ensure the .App container is centered */
-    width: 100%;
-    max-width: 100%;
-  }
-
   .main-content {
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 100%; /* Ensure content takes full width */
+    flex-direction: column; /* Stack elements on smaller screens */
   }
-
   .order-form, .wallet-container, .order-book-container, .recommendation {
-    width: 90%; /* Ensure elements fit within the screen */
-    margin: 20px auto; /* Center align elements with spacing */
+    padding: 20px; /* Reduced padding for smaller screens */
   }
+}
 
-  .order-book-item {
-    align-items: center; /* Center align text within items */
+@media (max-width: 480px) {
+  .order-form, .wallet-container, .order-book-container, .recommendation {
+    padding: 30px; /* Even smaller padding for very small screens */
+    margin: 5px; /* Reduce margin */
   }
-
   .sell-button, .buy-button {
-    width: 100%; /* Full width buttons on smaller screens */
-    margin-top: 10px;
+    padding: 10px; /* Slightly smaller padding on very small screens */
+    font-size: 0.9rem;
   }
+}
+/* Touch-Friendly Adjustments */
+@media (hover: none) {
+  .order-form:hover, .wallet-container:hover, .order-book-container:hover, .recommendation:hover {
+    transform: none;
+    box-shadow: none; /* Disable hover effects on touch devices */
+  }
+}
+
+/* Image and Icon Responsiveness */
+img, .wallet-icon {
+  max-width: 100%; /* Ensure images and icons are responsive */
+  height: auto;
+}
+
+/* Enable Scrolling for Overflow Content */
+.order-book-container, .wallet-container, .recommendation {
+  overflow-x: auto; /* Enable horizontal scrolling if necessary */
+  align-items: center;
 }

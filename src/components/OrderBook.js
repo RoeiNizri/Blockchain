@@ -7,7 +7,16 @@ const OrderBook = ({ orders }) => {
             <ul className="order-book-list">
                 {orders.map((order, index) => (
                     <li key={index} className="order-book-item">
-                        <span>{order.orderType.toUpperCase()}</span> - <span>{order.type.toUpperCase()}</span> {order.symbol} at ${order.price.toFixed(2)} - {order.amount} units
+            <span style={{ color: 'yellow', textDecoration: 'underline', fontWeight: 'bold' }}>
+  {order.orderType.toUpperCase()}
+</span>
+                        <span 
+                            style={{ 
+                                color: order.type.toLowerCase() === 'buy' ? 'green' : 'red', 
+                                fontWeight: 'bold'
+                            }}>
+                            {order.type.toUpperCase()}
+                        </span> {order.symbol} <span style={{ fontWeight: 'bold' }}>${order.price.toFixed(2)}</span> {order.amount} units
                         <br />
                         <span>{new Date(order.time).toLocaleString()}</span>
                         <span style={{ marginLeft: '10px', color: order.status === 'APPROVED' ? 'green' : 'gray' }}>
