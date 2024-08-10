@@ -5,7 +5,7 @@ const TradingChart = ({ symbol, orders }) => {
         let chartWidget = null;
 
         const createWidget = () => {
-            const containerId = `tradingview_${symbol}`;
+            const containerId = `tradingview_container_${symbol}`;
             const container = document.getElementById(containerId);
 
             if (container && window.TradingView) {
@@ -125,7 +125,7 @@ const TradingChart = ({ symbol, orders }) => {
             }}
         >
             <div
-                id={`tradingview_${symbol}`}
+                id={`tradingview_container_${symbol}`}
                 style={{
                     height: '100%',
                     width: '100%',
