@@ -10,6 +10,8 @@ const TradingChart = ({ symbol, orders }) => {
 
             if (container && window.TradingView) {
                 chartWidget = new window.TradingView.widget({
+                    library_path:
+      "https://trading-terminal.tradingview-widget.com/charting_library/",
                     symbol: symbol,
                     interval: 'D',
                     timezone: 'Asia/Jerusalem',
@@ -23,6 +25,7 @@ const TradingChart = ({ symbol, orders }) => {
                     withdateranges: true,
                     hide_side_toolbar: false,
                     autosize: true,
+                    disabled_features: ["order_panel", "trading_account_manager"],
                     studies_overrides: {},
                     overrides: {},
                     onChartReady: () => {
