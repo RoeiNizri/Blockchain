@@ -121,6 +121,7 @@ const TradingChart = ({ symbol, orders }) => {
                 justifyContent: 'center',
                 alignItems: 'center',
                 margin: '0 auto',
+                padding: '20 px',
             }}
         >
             <div

@@ -240,7 +240,7 @@ const handleOrder = (type) => {
 
     return (
         <div className="App">
-            <h1>Demo Trading System</h1>
+            <h1>Blockchain Trading System</h1>
             <div className="main-content">
                 <Wallet wallet={wallet} resetWallet={resetWallet} />
                 <div className="order-form">
