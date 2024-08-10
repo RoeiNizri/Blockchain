@@ -228,9 +228,6 @@ code {
 }
 
 @media (max-width: 768px) {
-  .main-content {
-    flex-direction: column; /* Stack elements on smaller screens */
-  }
   .order-form, .wallet-container, .order-book-container, .recommendation {
     padding: 20px; /* Reduced padding for smaller screens */
   }
@@ -256,7 +253,6 @@ code {
 
 /* Image and Icon Responsiveness */
 img, .wallet-icon {
-  max-width: 100%; /* Ensure images and icons are responsive */
   height: auto;
 }
 

@@ -36,7 +36,7 @@ const TradingChart = ({ symbol, orders }) => {
         };
 
         const addCustomElements = (widget) => {
-            if (!widget || !widget.chart) return;
+            if (!widget || typeof widget.chart !== 'function') return;
 
             const chart = widget.chart();
 
@@ -120,8 +120,8 @@ const TradingChart = ({ symbol, orders }) => {
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
-                margin: '20 auto',
-                padding: '20 px',
+                margin: '20px auto',
+                padding: '20px',
             }}
         >
             <div
