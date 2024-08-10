@@ -272,15 +272,18 @@ const handleOrder = (type) => {
         disabled={orderType === 'market'} 
     />
 </label>
-
-                    <label>
-                        Amount: 
-                        <input 
-                            type="number" 
-                            value={amount} 
-                            onChange={e => setAmount(Math.max(Number(e.target.value), 0))} 
-                        />
-                    </label>
+<label>
+    Amount: 
+    <input 
+        type="number" 
+        value={amount === 0 ? '' : amount} 
+        onChange={e => {
+            const value = e.target.value;
+            setAmount(value === '' ? 0 : Math.max(Number(value), 0));
+        }} 
+        placeholder="0"
+    />
+</label>
                     <label>
     Total: 
     <input 
