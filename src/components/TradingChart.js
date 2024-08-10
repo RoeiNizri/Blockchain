@@ -120,7 +120,7 @@ const TradingChart = ({ symbol, orders }) => {
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
-                margin: '0 auto',
+                margin: '20 auto',
                 padding: '20 px',
             }}
         >
