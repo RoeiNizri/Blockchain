@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, memo } from 'react';
 
 const TradingChart = ({ symbol, orders }) => {
     useEffect(() => {
@@ -7,11 +7,12 @@ const TradingChart = ({ symbol, orders }) => {
         const createWidget = () => {
             const containerId = `tradingview_container_${symbol}`;
             const container = document.getElementById(containerId);
-
+            container.src ="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
             if (container && window.TradingView) {
                 chartWidget = new window.TradingView.widget({
                     library_path:
-      "https://trading-terminal.tradingview-widget.com/charting_library/",
+                     "https://trading-terminal.tradingview-widget.com/charting_library/",
+                    autosize: true,
                     symbol: symbol,
                     interval: 'D',
                     timezone: 'Asia/Jerusalem',
@@ -19,15 +20,15 @@ const TradingChart = ({ symbol, orders }) => {
                     style: '1',
                     locale: 'en',
                     toolbar_bg: '#f1f3f6',
+                    gridColor: "rgba(73, 133, 231, 0.06)",
                     enable_publishing: false,
                     allow_symbol_change: true,
                     container_id: containerId,
                     withdateranges: true,
                     hide_side_toolbar: false,
-                    autosize: true,
-                    disabled_features: ["order_panel", "trading_account_manager"],
-                    studies_overrides: {},
-                    overrides: {},
+                    details: true,
+                    studies:["STD:MA%Ribbon"],
+                    support_host: "https://www.tradingview.com",
                     onChartReady: () => {
                         console.log('Chart is ready');
                         addCustomElements(chartWidget);
@@ -44,18 +45,6 @@ const TradingChart = ({ symbol, orders }) => {
             const chart = widget.chart();
 
             try {
-                // Adding EMAs with proper periods and colors
-                chart.createStudy('Moving Average Exponential', false, true, [9], null, {
-                    'plot.color': 'blue',
-                    'plot.linewidth': 2,
-                });
-                chart.createStudy('Moving Average Exponential', false, true, [21], null, {
-                    'plot.color': 'red',
-                    'plot.linewidth': 2,
-                });
-
-                console.log('EMAs added successfully');
-
                 // Add Buy/Sell Markers
                 orders
                     .filter(order => order.status === 'APPROVED')
@@ -96,14 +85,7 @@ const TradingChart = ({ symbol, orders }) => {
         } else {
             if (window.TradingView) {
                 createWidget();
-            } else {
-                const intervalId = setInterval(() => {
-                    if (window.TradingView) {
-                        createWidget();
-                        clearInterval(intervalId);
-                    }
-                }, 100);
-            }
+            } 
         }
 
         return () => {
@@ -138,4 +120,4 @@ const TradingChart = ({ symbol, orders }) => {
     );
 };
 
-export default TradingChart;
+export default memo(TradingChart);

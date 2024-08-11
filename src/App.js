@@ -1,9 +1,11 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import TradingChart from './components/TradingChart';
 import OrderBook from './components/OrderBook';
 import Wallet from './components/Wallet';
-import { getCryptoPrice, getCryptoData } from './services/cryptoService'; // Added getCryptoData
+import { getCryptoPrice, getCryptoData } from './services/cryptoService';
 import { connectWebSocket } from './services/webSocketService';
+import { saveOrder, getOrders, deleteAllOrders } from './services/indexedDBService'; // Import IndexedDB functions
 import './App.css';
 
 const App = () => {
@@ -24,19 +26,25 @@ const App = () => {
     const [amount, setAmount] = useState(0);
     const [orderType, setOrderType] = useState('market');
     const [selectedSymbol, setSelectedSymbol] = useState('BTC');
-    const [recommendation, setRecommendation] = useState(''); // Added for recommendation
+    const [recommendation, setRecommendation] = useState('');
 
     useEffect(() => {
-        const savedWallet = localStorage.getItem('wallet');
-        const savedOrders = localStorage.getItem('orders');
-        if (savedWallet) setWallet(JSON.parse(savedWallet));
-        if (savedOrders) setOrders(JSON.parse(savedOrders));
+        const loadOrders = async () => {
+            const savedOrders = await getOrders();
+            setOrders(savedOrders);
+        };
+        loadOrders();
     }, []);
 
     useEffect(() => {
-        localStorage.setItem('wallet', JSON.stringify(wallet));
-        localStorage.setItem('orders', JSON.stringify(orders));
-    }, [wallet, orders]);
+        const saveOrders = async () => {
+            await deleteAllOrders(); // Clear previous orders
+            for (const order of orders) {
+                await saveOrder(order);
+            }
+        };
+        saveOrders();
+    }, [orders]);
 
     useEffect(() => {
         const fetchInitialPrices = async () => {
@@ -47,73 +55,73 @@ const App = () => {
                     ETH: prices.ethereum.usd
                 });
 
-// Fetch data for recommendation
-const cryptoData = await getCryptoData(selectedSymbol === 'BTC' ? 'bitcoin' : 'ethereum');
-if (cryptoData && cryptoData[0]) {
-    const data = cryptoData[0];
-    const volumeMultiplier = data.total_volume / data.prev_24h_volume; // Assuming you have the previous volume data
-    const shortTermMA = data.short_term_moving_average; // E.g., 50-day
-    const longTermMA = data.long_term_moving_average; // E.g., 200-day
-    const rsi = data.relative_strength_index; // Assuming RSI is provided in the data
-    let recommendation = '';
-    let reasons = [];
+                // Fetch data for recommendation
+                const cryptoData = await getCryptoData(selectedSymbol === 'BTC' ? 'bitcoin' : 'ethereum');
+                if (cryptoData && cryptoData[0]) {
+                    const data = cryptoData[0];
+                    const volumeMultiplier = data.total_volume / data.prev_24h_volume;
+                    const shortTermMA = data.short_term_moving_average;
+                    const longTermMA = data.long_term_moving_average;
+                    const rsi = data.relative_strength_index;
+                    let recommendation = '';
+                    let reasons = [];
 
-    // Volume Spike Check
-    if (volumeMultiplier >= 5) {
-        reasons.push('High volume spike detected');
-    }
+                    // Volume Spike Check
+                    if (volumeMultiplier >= 5) {
+                        reasons.push('High volume spike detected');
+                    }
 
-    // Moving Average Crossover Check
-    if (shortTermMA > longTermMA) {
-        reasons.push('Golden Cross detected');
-    } else if (shortTermMA < longTermMA) {
-        reasons.push('Death Cross detected');
-    }
+                    // Moving Average Crossover Check
+                    if (shortTermMA > longTermMA) {
+                        reasons.push('Golden Cross detected');
+                    } else if (shortTermMA < longTermMA) {
+                        reasons.push('Death Cross detected');
+                    }
 
-    // RSI Check (Overbought/Oversold conditions)
-    if (rsi >= 70) {
-        reasons.push('RSI indicates overbought conditions');
-    } else if (rsi <= 30) {
-        reasons.push('RSI indicates oversold conditions');
-    }
+                    // RSI Check (Overbought/Oversold conditions)
+                    if (rsi >= 70) {
+                        reasons.push('RSI indicates overbought conditions');
+                    } else if (rsi <= 30) {
+                        reasons.push('RSI indicates oversold conditions');
+                    }
 
-    // Price Change Check
-    if (data.price_change_percentage_24h >= 5) {
-        reasons.push('Price increased by 5% or more in the last 24 hours');
-    } else if (data.price_change_percentage_24h <= -5) {
-        reasons.push('Price decreased by 5% or more in the last 24 hours');
-    }
+                    // Price Change Check
+                    if (data.price_change_percentage_24h >= 5) {
+                        reasons.push('Price increased by 5% or more in the last 24 hours');
+                    } else if (data.price_change_percentage_24h <= -5) {
+                        reasons.push('Price decreased by 5% or more in the last 24 hours');
+                    }
 
-    // Support and Resistance Levels (if available)
-    if (data.price > data.resistance_level) {
-        reasons.push('Price broke above resistance level');
-    } else if (data.price < data.support_level) {
-        reasons.push('Price dropped below support level');
-    }
+                    // Support and Resistance Levels (if available)
+                    if (data.price > data.resistance_level) {
+                        reasons.push('Price broke above resistance level');
+                    } else if (data.price < data.support_level) {
+                        reasons.push('Price dropped below support level');
+                    }
 
-    // Decision Logic
-    if (reasons.includes('Golden Cross detected') || 
-        reasons.includes('Price increased by 5% or more in the last 24 hours') || 
-        reasons.includes('High volume spike detected') ||
-        reasons.includes('Price broke above resistance level')) {
-        
-        recommendation = `BUY - ${reasons.join(', ')}`;
-    } else if (reasons.includes('Death Cross detected') || 
-               reasons.includes('Price decreased by 5% or more in the last 24 hours') || 
-               reasons.includes('RSI indicates overbought conditions') ||
-               reasons.includes('Price dropped below support level')) {
-        
-        recommendation = `SELL - ${reasons.join(', ')}`;
-    } else {
-        recommendation = `HOLD - ${reasons.length > 0 ? reasons.join(', ') : 'No significant signals detected'}`;
-    }
+                    // Decision Logic
+                    if (reasons.includes('Golden Cross detected') ||
+                        reasons.includes('Price increased by 5% or more in the last 24 hours') ||
+                        reasons.includes('High volume spike detected') ||
+                        reasons.includes('Price broke above resistance level')) {
 
-    setRecommendation(recommendation);
-}
-} catch (error) {
-    console.error('Error fetching initial prices or recommendation data:', error);
-}
-};
+                        recommendation = `BUY - ${reasons.join(', ')}`;
+                    } else if (reasons.includes('Death Cross detected') ||
+                        reasons.includes('Price decreased by 5% or more in the last 24 hours') ||
+                        reasons.includes('RSI indicates overbought conditions') ||
+                        reasons.includes('Price dropped below support level')) {
+
+                        recommendation = `SELL - ${reasons.join(', ')}`;
+                    } else {
+                        recommendation = `HOLD - ${reasons.length > 0 ? reasons.join(', ') : 'No significant signals detected'}`;
+                    }
+
+                    setRecommendation(recommendation);
+                }
+            } catch (error) {
+                console.error('Error fetching initial prices or recommendation data:', error);
+            }
+        };
 
         fetchInitialPrices();
     }, [selectedSymbol]);
@@ -126,8 +134,7 @@ if (cryptoData && cryptoData[0]) {
         };
         setWallet(initialWallet);
         setOrders([]);
-        localStorage.setItem('wallet', JSON.stringify(initialWallet));
-        localStorage.setItem('orders', JSON.stringify([]));
+        deleteAllOrders(); // Clear the IndexedDB orders store
     };
 
     const checkLimitOrders = useCallback((currentPrices) => {
@@ -138,7 +145,7 @@ if (cryptoData && cryptoData[0]) {
                 const symbol = order.symbol.split('/')[0];
                 const currentPrice = currentPrices[symbol];
                 const total = order.price * order.amount;
-    
+
                 if (order.type === 'buy' && currentPrice <= order.price && newWallet.USDT >= total) {
                     newWallet.USDT -= total;
                     newWallet[symbol] += order.amount;
@@ -153,90 +160,88 @@ if (cryptoData && cryptoData[0]) {
             }
             return order;
         });
-    
+
         if (ordersChanged) {
             setWallet(newWallet);
             setOrders(updatedOrders);
         }
     }, [wallet, orders]);
-       
 
-// Handles price updates and checks limit orders
-useEffect(() => {
-    // Ensure the WebSocket connects only after the component has mounted
-    const socket = connectWebSocket((data) => {
-        const symbolData = data[selectedSymbol];
-        if (symbolData) {
-            const currentPrice = parseFloat(symbolData.p).toFixed(2);
-            setPrice((prevPrice) => ({
-                ...prevPrice,
-                [selectedSymbol]: currentPrice
-            }));
+    // Handles price updates and checks limit orders
+    useEffect(() => {
+        // Ensure the WebSocket connects only after the component has mounted
+        const socket = connectWebSocket((data) => {
+            const symbolData = data[selectedSymbol];
+            if (symbolData) {
+                const currentPrice = parseFloat(symbolData.p).toFixed(2);
+                setPrice((prevPrice) => ({
+                    ...prevPrice,
+                    [selectedSymbol]: currentPrice
+                }));
 
-            // Check limit orders only when prices are updated
-            checkLimitOrders({ [selectedSymbol]: parseFloat(currentPrice) });
-        }
-    });
+                // Check limit orders only when prices are updated
+                checkLimitOrders({ [selectedSymbol]: parseFloat(currentPrice) });
+            }
+        });
 
-    // Handle WebSocket errors
-    socket.onerror = (error) => {
-        console.error('WebSocket error:', error);
-    };
+        // Handle WebSocket errors
+        socket.onerror = (error) => {
+            console.error('WebSocket error:', error);
+        };
 
-    // Ensure the WebSocket connection is properly closed when the component unmounts
-    return () => {
-        if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
-            socket.close();
-        }
-    };
-}, [selectedSymbol, checkLimitOrders]);
-    
-const handleOrder = (type) => {
-    const orderPrice = parseFloat(orderType === 'market' ? price[selectedSymbol] : limitPrice[selectedSymbol] || 0);
-    const total = orderPrice * amount;
+        // Ensure the WebSocket connection is properly closed when the component unmounts
+        return () => {
+            if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
+                socket.close();
+            }
+        };
+    }, [selectedSymbol, checkLimitOrders]);
 
-    if (amount <= 0) {
-        alert('Amount must be positive!');
-        return;
-    }
+    const handleOrder = (type) => {
+        const orderPrice = parseFloat(orderType === 'market' ? price[selectedSymbol] : limitPrice[selectedSymbol] || 0);
+        const total = orderPrice * amount;
 
-    const newWallet = { ...wallet };
-    const newOrder = {
-        type,
-        symbol: `${selectedSymbol}/USDT`,
-        price: orderPrice, // Store the correct price, whether it's market or limit
-        amount,
-        time: new Date().toISOString(),
-        orderType,
-        status: 'PENDING' // Default status as PENDING
-    };
-
-    if (orderType === 'market') {
-        // Immediately execute market orders
-        if (type === 'buy' && newWallet.USDT >= total) {
-            newWallet.USDT -= total;
-            newWallet[selectedSymbol] += amount;
-            newOrder.status = 'APPROVED';
-        } else if (type === 'sell' && newWallet[selectedSymbol] >= amount) {
-            newWallet.USDT += total;
-            newWallet[selectedSymbol] -= amount;
-            newOrder.status = 'APPROVED';
-        } else {
-            alert('Insufficient funds!');
+        if (amount <= 0) {
+            alert('Amount must be positive!');
             return;
         }
-    } else if (orderType === 'limit') {
-        // Limit orders will be handled later when price conditions are met
-        if ((type === 'buy' && newWallet.USDT < total) || (type === 'sell' && newWallet[selectedSymbol] < amount)) {
-            alert('Insufficient funds for limit order!');
-            return;
+
+        const newWallet = { ...wallet };
+        const newOrder = {
+            type,
+            symbol: `${selectedSymbol}/USDT`,
+            price: orderPrice, // Store the correct price, whether it's market or limit
+            amount,
+            time: new Date().toISOString(),
+            orderType,
+            status: 'PENDING' // Default status as PENDING
+        };
+
+        if (orderType === 'market') {
+            // Immediately execute market orders
+            if (type === 'buy' && newWallet.USDT >= total) {
+                newWallet.USDT -= total;
+                newWallet[selectedSymbol] += amount;
+                newOrder.status = 'APPROVED';
+            } else if (type === 'sell' && newWallet[selectedSymbol] >= amount) {
+                newWallet.USDT += total;
+                newWallet[selectedSymbol] -= amount;
+                newOrder.status = 'APPROVED';
+            } else {
+                alert('Insufficient funds!');
+                return;
+            }
+        } else if (orderType === 'limit') {
+            // Limit orders will be handled later when price conditions are met
+            if ((type === 'buy' && newWallet.USDT < total) || (type === 'sell' && newWallet[selectedSymbol] < amount)) {
+                alert('Insufficient funds for limit order!');
+                return;
+            }
         }
-    }
 
-    setWallet(newWallet);
-    setOrders([...orders, newOrder]);
-};
-
+        setWallet(newWallet);
+        setOrders([...orders, newOrder]);
+    };
 
     return (
         <div className="App">
@@ -260,38 +265,38 @@ const handleOrder = (type) => {
                         </select>
                     </label>
                     <label>
-    Price:
-    <input 
-        type="number" 
-        value={orderType === 'market' ? price[selectedSymbol] : limitPrice[selectedSymbol] || price[selectedSymbol]} 
-        onChange={e => {
-            if (orderType === 'limit') {
-                setLimitPrice({ ...limitPrice, [selectedSymbol]: Number(e.target.value) });
-            }
-        }} 
-        disabled={orderType === 'market'} 
-    />
-</label>
-<label>
-    Amount: 
-    <input 
-        type="number" 
-        value={amount === 0 ? '' : amount} 
-        onChange={e => {
-            const value = e.target.value;
-            setAmount(value === '' ? 0 : Math.max(Number(value), 0));
-        }} 
-        placeholder="0"
-    />
-</label>
+                        Price:
+                        <input
+                            type="number"
+                            value={orderType === 'market' ? price[selectedSymbol] : limitPrice[selectedSymbol] || price[selectedSymbol]}
+                            onChange={e => {
+                                if (orderType === 'limit') {
+                                    setLimitPrice({ ...limitPrice, [selectedSymbol]: Number(e.target.value) });
+                                }
+                            }}
+                            disabled={orderType === 'market'}
+                        />
+                    </label>
                     <label>
-    Total: 
-    <input 
-        type="number" 
-        value={((limitPrice[selectedSymbol] || price[selectedSymbol]) || 0) * amount} 
-        readOnly 
-    />
-</label>
+                        Amount:
+                        <input
+                            type="number"
+                            value={amount === 0 ? '' : amount}
+                            onChange={e => {
+                                const value = e.target.value;
+                                setAmount(value === '' ? 0 : Math.max(Number(value), 0));
+                            }}
+                            placeholder="0"
+                        />
+                    </label>
+                    <label>
+                        Total:
+                        <input
+                            type="number"
+                            value={((limitPrice[selectedSymbol] || price[selectedSymbol]) || 0) * amount}
+                            readOnly
+                        />
+                    </label>
 
                     <div className="order-buttons">
                         <button className="buy-button" onClick={() => handleOrder('buy')}>Buy {selectedSymbol}</button>
@@ -300,13 +305,13 @@ const handleOrder = (type) => {
                 </div>
                 {recommendation && (
                     <div className={`recommendation ${recommendation.startsWith('BUY') ? 'recommendation-buy' : recommendation.startsWith('SELL') ? 'recommendation-sell' : 'recommendation-hold'}`}>
-    <h3>{recommendation.split(' - ')[0]}</h3>
-    <div>
-        {recommendation.split(' - ')[1]?.split(', ').map((reason, index) => (
-            <div key={index}>{`${index + 1}. ${reason}`}</div>
-        ))}
-    </div>
-</div>          
+                        <h3>{recommendation.split(' - ')[0]}</h3>
+                        <div>
+                            {recommendation.split(' - ')[1]?.split(', ').map((reason, index) => (
+                                <div key={index}>{`${index + 1}. ${reason}`}</div>
+                            ))}
+                        </div>
+                    </div>
                 )}
             </div>
             <TradingChart symbol={`BINANCE:${selectedSymbol}USDT`} orders={orders} />
