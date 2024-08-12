@@ -25,7 +25,6 @@ const TradingChart = ({ symbol, orders }) => {
                     autosize: true, 
                     onChartReady: () => {
                         console.log('Chart is ready');
-                        addStudies(chartWidget);
                     },
                 });
             } else {
