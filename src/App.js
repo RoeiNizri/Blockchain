@@ -305,17 +305,36 @@ const App = () => {
                         />
                     </label>
                     <label>
-                        Amount:
-                        <input
-                            type="number"
-                            value={amount === 0 ? '' : amount}
-                            onChange={e => {
-                                const value = e.target.value;
-                                setAmount(value === '' ? 0 : Math.max(Number(value), 0));
-                            }}
-                            placeholder="0"
-                        />
-                    </label>
+    Amount:
+    <input
+        type="number"
+        value={amount === 0 ? '' : amount}
+        onChange={e => {
+            const value = e.target.value;
+            if (value === '' || Number(value) === 0) {
+                setAmount(value); // Maintain empty or zero values
+            } else if (Number(value) > 0) {
+                const decimalPattern = /^(\d+)(\.?)(\d*)$/;
+                const match = value.match(decimalPattern);
+                if (match) {
+                    const integerPart = match[1];
+                    const decimalPoint = match[2];
+                    const fractionalPart = match[3];
+                    
+                    // Check if the fractional part has only zeros after the decimal point
+                    const isOnlyZeros = fractionalPart && fractionalPart.split('').every(digit => digit === '0');
+                    
+                    if (decimalPoint && fractionalPart && !isOnlyZeros) {
+                        setAmount(`${integerPart}${decimalPoint}${fractionalPart}`);
+                    } else {
+                        setAmount(Number(value)); // Regular number without trailing zeros
+                    }
+                }
+            }
+        }}
+        placeholder="0.0"
+    />
+</label>
                     <label>
                         Total:
                         <input
