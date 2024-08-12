@@ -3,7 +3,7 @@ import React, { useEffect, memo } from 'react';
 const TradingChart = ({ symbol, orders }) => {
     useEffect(() => {
         let chartWidget = null;
-
+    
         const createWidget = () => {
             const containerId = `tradingview_container_${symbol}`;
             const container = document.getElementById(containerId);
@@ -22,8 +22,7 @@ const TradingChart = ({ symbol, orders }) => {
                     details: true,
                     enable_publishing: false,
                     allow_symbol_change: true,
-                    autosize: true,
-                    studies: ['Moving Average', 'Volume','MA Cross' ], // Initialize with an empty array
+                    autosize: true, 
                     onChartReady: () => {
                         console.log('Chart is ready');
                         addStudies(chartWidget);
@@ -33,44 +32,23 @@ const TradingChart = ({ symbol, orders }) => {
                 console.error('Container or TradingView is not available');
             }
         };
-
-        const addStudies = (widget) => {
-            if (!widget || typeof widget.chart !== 'function') return;
-
-            const chart = widget.chart();
-
-            // Add your desired studies/indicators
-            chart.createStudy('Moving Average', false, false, [5, 10, 15], null, {
-                'Plot.color': 'blue',
-            });
-            chart.createStudy('Volume', false, false, null, null, {
-                'Plot.color': 'red',
-            });
-            // Example: Adding Moving Average Ribbon
-            chart.createStudy('MA Cross', false, false, [9, 21], null, {
-                'Plot.linewidth': 2,
-                'Plot.color': 'green',
-            });
-
-            // Add any other studies here
-        };
-
+    
         const loadScriptAndCreateWidget = () => {
             const scriptId = 'tradingview-script';
             const existingScript = document.getElementById(scriptId);
-
+    
             if (!existingScript) {
                 const script = document.createElement('script');
                 script.src = 'https://s3.tradingview.com/tv.js';
                 script.async = true;
                 script.id = scriptId;
                 document.body.appendChild(script);
-
+    
                 script.onload = () => {
                     console.log('TradingView script loaded');
                     createWidget();
                 };
-
+    
                 script.onerror = () => {
                     console.error('Failed to load TradingView script');
                 };
@@ -84,9 +62,9 @@ const TradingChart = ({ symbol, orders }) => {
                 }
             }
         };
-
+    
         loadScriptAndCreateWidget();
-
+    
         return () => {
             if (chartWidget) {
                 chartWidget.remove();
