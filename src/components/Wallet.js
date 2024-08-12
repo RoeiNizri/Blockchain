@@ -7,7 +7,7 @@ const walletIcons = {
     // Add more symbols as needed
 };
 
-const Wallet = ({ wallet, resetWallet }) => {
+const Wallet = ({ wallet, resetWallet, totalBalance }) => {
     return (
         <div className="wallet-container">
             <h2>Wallet Balance</h2>
@@ -21,6 +21,7 @@ const Wallet = ({ wallet, resetWallet }) => {
                     </li>
                 ))}
             </ul>
+            <h3>Total Balance: ${totalBalance.toFixed(2)}</h3> {/* Added total balance display */}
             <button onClick={resetWallet} className="reset-button">Reset Wallet</button>
         </div>
     );

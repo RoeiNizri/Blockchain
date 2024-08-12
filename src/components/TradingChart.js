@@ -7,12 +7,8 @@ const TradingChart = ({ symbol, orders }) => {
         const createWidget = () => {
             const containerId = `tradingview_container_${symbol}`;
             const container = document.getElementById(containerId);
-            container.src ="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
             if (container && window.TradingView) {
                 chartWidget = new window.TradingView.widget({
-                    library_path:
-                     "https://trading-terminal.tradingview-widget.com/charting_library/",
-                    autosize: true,
                     symbol: symbol,
                     interval: 'D',
                     timezone: 'Asia/Jerusalem',
@@ -20,18 +16,17 @@ const TradingChart = ({ symbol, orders }) => {
                     style: '1',
                     locale: 'en',
                     toolbar_bg: '#f1f3f6',
-                    gridColor: "rgba(73, 133, 231, 0.06)",
-                    enable_publishing: false,
-                    allow_symbol_change: true,
                     container_id: containerId,
                     withdateranges: true,
                     hide_side_toolbar: false,
                     details: true,
-                    studies:["STD:MA%Ribbon"],
-                    support_host: "https://www.tradingview.com",
+                    studies: ["STD:MA%Ribbon"],
+                    enable_publishing: false,
+                    allow_symbol_change: true,
+                    autosize: true,
                     onChartReady: () => {
                         console.log('Chart is ready');
-                        addCustomElements(chartWidget);
+                        addCustomGuidance(chartWidget);
                     },
                 });
             } else {
@@ -39,13 +34,59 @@ const TradingChart = ({ symbol, orders }) => {
             }
         };
 
-        const addCustomElements = (widget) => {
+        const addCustomGuidance = (widget) => {
             if (!widget || typeof widget.chart !== 'function') return;
 
             const chart = widget.chart();
 
             try {
-                // Add Buy/Sell Markers
+                // Example: Add text annotations to guide the user
+                chart.createShape(
+                    { time: Date.now() / 1000 - 60 * 60 * 24 * 5, price: chart.getVisiblePriceRange().middle }, // Adjust coordinates as necessary
+                    {
+                        shape: 'text',
+                        text: 'Use this toolbar to change the chart settings.',
+                        color: 'blue',
+                        overrides: {
+                            fontSize: 16,
+                            fontColor: 'blue',
+                            bold: true,
+                            placement: 'top',
+                        }
+                    }
+                );
+
+                chart.createShape(
+                    { time: Date.now() / 1000 - 60 * 60 * 24 * 3, price: chart.getVisiblePriceRange().middle * 1.05 },
+                    {
+                        shape: 'text',
+                        text: 'Zoom in/out using the scroll wheel.',
+                        color: 'green',
+                        overrides: {
+                            fontSize: 16,
+                            fontColor: 'green',
+                            bold: true,
+                            placement: 'top',
+                        }
+                    }
+                );
+
+                chart.createShape(
+                    { time: Date.now() / 1000, price: chart.getVisiblePriceRange().middle * 0.95 },
+                    {
+                        shape: 'text',
+                        text: 'Drag the chart to explore different time periods.',
+                        color: 'red',
+                        overrides: {
+                            fontSize: 16,
+                            fontColor: 'red',
+                            bold: true,
+                            placement: 'top',
+                        }
+                    }
+                );
+
+                // Add Buy/Sell Markers based on orders
                 orders
                     .filter(order => order.status === 'APPROVED')
                     .forEach(order => {
@@ -65,9 +106,9 @@ const TradingChart = ({ symbol, orders }) => {
                         );
                     });
 
-                console.log('Buy/Sell markers added');
+                console.log('Custom guidance and markers added');
             } catch (error) {
-                console.error('Error adding studies or markers:', error);
+                console.error('Error adding guidance or markers:', error);
             }
         };
 
@@ -90,7 +131,7 @@ const TradingChart = ({ symbol, orders }) => {
 
         return () => {
             if (chartWidget) {
-                chartWidget.remove(); // Properly dispose of the widget to prevent memory leaks
+                chartWidget.remove();
                 chartWidget = null;
             }
         };

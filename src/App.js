@@ -26,6 +26,18 @@ const App = () => {
     const [orderType, setOrderType] = useState('market');
     const [selectedSymbol, setSelectedSymbol] = useState('BTC');
     const [recommendation, setRecommendation] = useState('');
+    const [totalBalance, setTotalBalance] = useState(0);
+
+    const calculateTotalBalance = useCallback(() => {
+        const btcValueInUSDT = wallet.BTC * price.BTC;
+        const ethValueInUSDT = wallet.ETH * price.ETH;
+        const total = wallet.USDT + btcValueInUSDT + ethValueInUSDT;
+        setTotalBalance(total);
+    }, [wallet, price]);
+
+    useEffect(() => {
+        calculateTotalBalance();
+    }, [wallet, price, calculateTotalBalance]);
 
     useEffect(() => {
         const loadOrders = async () => {
@@ -246,7 +258,7 @@ const App = () => {
         <div className="App">
             <h1>Blockchain Trading System</h1>
             <div className="main-content">
-                <Wallet wallet={wallet} resetWallet={resetWallet} />
+            <Wallet wallet={wallet} resetWallet={resetWallet} totalBalance={totalBalance} />
                 <div className="order-form">
                     <h2>Place Order</h2>
                     <label>
