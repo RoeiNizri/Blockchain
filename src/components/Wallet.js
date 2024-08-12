@@ -17,7 +17,7 @@ const Wallet = ({ wallet, resetWallet, totalBalance }) => {
                         <li key={key} className="wallet-item">
                             <span className="wallet-icon">{walletIcons[key] || '💰'}</span>
                             <span className="wallet-amount">
-                                {key}: {key === 'USDT' ? `$${(wallet[key] || 0).toLocaleString()}` : `${wallet[key] || 0} ${key}`}
+                                {key}: {key === 'USDT' ? `$${(wallet[key]).toLocaleString()}` : `${wallet[key]} ${key}`}
                             </span>
                         </li>
                     ))
