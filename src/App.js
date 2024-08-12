@@ -27,13 +27,6 @@ const App = () => {
     const [selectedSymbol, setSelectedSymbol] = useState('BTC');
     const [recommendation, setRecommendation] = useState('');
     const [totalBalance, setTotalBalance] = useState(0);
-
-    const calculateTotalBalance = useCallback(() => {
-        const btcValueInUSDT = (wallet.BTC || 0) * (price.BTC || 0);
-        const ethValueInUSDT = (wallet.ETH || 0) * (price.ETH || 0);
-        const total = (wallet.USDT || 0) + btcValueInUSDT + ethValueInUSDT;
-        setTotalBalance(total);
-    }, [wallet, price]);
     
     useEffect(() => {
         const loadWallet = async () => {
@@ -52,6 +45,13 @@ const App = () => {
         };
         loadWallet();
     }, []);
+    
+    const calculateTotalBalance = useCallback(() => {
+        const btcValueInUSDT = (wallet.BTC || 0) * (price.BTC || 0);
+        const ethValueInUSDT = (wallet.ETH || 0) * (price.ETH || 0);
+        const total = (wallet.USDT || 0) + btcValueInUSDT + ethValueInUSDT;
+        setTotalBalance(total);
+    }, [wallet, price]);
     
     useEffect(() => {
         if (wallet && price.BTC !== 0 && price.ETH !== 0) {
