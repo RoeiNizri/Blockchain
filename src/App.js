@@ -17,8 +17,6 @@ const App = () => {
     const [selectedSymbol, setSelectedSymbol] = useState('BTC');
     const [recommendation, setRecommendation] = useState('');
     const [totalBalance, setTotalBalance] = useState(0);
-    const initialWallet = { USDT: 1000000, BTC: 0, ETH: 0 };
-    setWallet(initialWallet);
 
     const calculateTotalBalance = useCallback(() => {
         const btcValueInUSDT = (wallet.BTC || 0) * (price.BTC || 0);
