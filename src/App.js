@@ -29,33 +29,35 @@ const App = () => {
     const [totalBalance, setTotalBalance] = useState(0);
 
     const calculateTotalBalance = useCallback(() => {
-        const btcValueInUSDT = wallet.BTC * price.BTC;
-        const ethValueInUSDT = wallet.ETH * price.ETH;
-        const total = wallet.USDT + btcValueInUSDT + ethValueInUSDT;
+        const btcValueInUSDT = (wallet.BTC || 0) * (price.BTC || 0);
+        const ethValueInUSDT = (wallet.ETH || 0) * (price.ETH || 0);
+        const total = (wallet.USDT || 0) + btcValueInUSDT + ethValueInUSDT;
         setTotalBalance(total);
     }, [wallet, price]);
+    
+    useEffect(() => {
+        if (price.BTC !== 0 && price.ETH !== 0) {
+            calculateTotalBalance();
+        }
+    }, [wallet, price, calculateTotalBalance]);
+    
 
     useEffect(() => {
-        calculateTotalBalance();
-    }, [wallet, price, calculateTotalBalance]);
-
-useEffect(() => {
-    const loadWallet = async () => {
-        const savedWallet = await getWallet();
-        // If the saved wallet is null or undefined, use the initial values
-        if (!savedWallet || Object.keys(savedWallet).length === 0) {
-            setWallet({
-                USDT: 1000000,
-                BTC: 0,
-                ETH: 0
-            });
-        } else {
-            setWallet(savedWallet);
-        }
-    };
-    loadWallet();
-}, []);
-
+        const loadWallet = async () => {
+            const savedWallet = await getWallet();
+            if (!savedWallet || Object.keys(savedWallet).length === 0) {
+                setWallet({
+                    USDT: 1000000,
+                    BTC: 0,
+                    ETH: 0
+                });
+            } else {
+                setWallet(savedWallet);
+            }
+        };
+        loadWallet();
+    }, []);
+    
     useEffect(() => {
         const loadOrders = async () => {
             const savedOrders = await getOrders();
