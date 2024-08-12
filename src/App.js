@@ -29,9 +29,8 @@ const App = () => {
         const loadWallet = async () => {
             const savedWallet = await getWallet();
             if (!savedWallet || Object.keys(savedWallet).length === 0) {
-                const initialWallet = { USDT: 1000000, BTC: 0, ETH: 0 };
-                setWallet(initialWallet);
-                await saveWallet(initialWallet);
+                setWallet(wallet);
+                await saveWallet(wallet);
             } else {
                 setWallet(savedWallet);
             }
