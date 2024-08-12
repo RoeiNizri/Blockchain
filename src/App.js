@@ -39,13 +39,22 @@ const App = () => {
         calculateTotalBalance();
     }, [wallet, price, calculateTotalBalance]);
 
-    useEffect(() => {
-        const loadWallet = async () => {
-            const savedWallet = await getWallet();
+useEffect(() => {
+    const loadWallet = async () => {
+        const savedWallet = await getWallet();
+        // If the saved wallet is null or undefined, use the initial values
+        if (!savedWallet || Object.keys(savedWallet).length === 0) {
+            setWallet({
+                USDT: 1000000,
+                BTC: 0,
+                ETH: 0
+            });
+        } else {
             setWallet(savedWallet);
-        };
-        loadWallet();
-    }, []);
+        }
+    };
+    loadWallet();
+}, []);
 
     useEffect(() => {
         const loadOrders = async () => {
@@ -335,14 +344,15 @@ const App = () => {
         placeholder="0.0"
     />
 </label>
-                    <label>
-                        Total:
-                        <input
-                            type="number"
-                            value={((limitPrice[selectedSymbol] || price[selectedSymbol]) || 0) * amount}
-                            readOnly
-                        />
-                    </label>
+<label>
+    Total:
+    <input
+        type="text"
+        value={(((limitPrice[selectedSymbol] || price[selectedSymbol]) || 0) * amount).toLocaleString()}
+        readOnly
+    />
+</label>
+
 
                     <div className="order-buttons">
                         <button className="buy-button" onClick={() => handleOrder('buy')}>Buy {selectedSymbol}</button>
