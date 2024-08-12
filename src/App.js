@@ -28,15 +28,23 @@ const App = () => {
     useEffect(() => {
         const loadWallet = async () => {
             const savedWallet = await getWallet();
-            if (!savedWallet || Object.keys(savedWallet).length === 0) {
-                setWallet(wallet);
+            if (!savedWallet || Object.keys(savedWallet).every(key => savedWallet[key] === 0)) {
+                // Save the initial state of the wallet to IndexedDB
+                setWallet(wallet); // Trigger a state update
                 await saveWallet(wallet);
             } else {
                 setWallet(savedWallet);
             }
         };
         loadWallet();
-    }, []);
+    }, []); // Only run this effect on mount
+    
+    useEffect(() => {
+        const saveWalletData = async () => {
+            await saveWallet(wallet);
+        };
+        saveWalletData();
+    }, [wallet]); // Save the wallet whenever it changes
 
     useEffect(() => {
         const loadOrders = async () => {
@@ -61,13 +69,6 @@ const App = () => {
         };
         saveOrders();
     }, [orders]);
-
-    useEffect(() => {
-        const saveWalletData = async () => {
-            await saveWallet(wallet);
-        };
-        saveWalletData();
-    }, [wallet]);
 
     useEffect(() => {
         const fetchInitialPrices = async () => {

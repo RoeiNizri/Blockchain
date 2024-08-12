@@ -49,9 +49,9 @@ export const getWallet = async () => {
     const tx = db.transaction(STORE_NAME_WALLET, 'readonly');
     const store = tx.objectStore(STORE_NAME_WALLET);
     const wallet = {
-        USDT: (await store.get('USDT'))?.amount,
-        BTC: (await store.get('BTC'))?.amount,
-        ETH: (await store.get('ETH'))?.amount,
+        USDT: (await store.get('USDT'))?.amount || 0,
+        BTC: (await store.get('BTC'))?.amount || 0,
+        ETH: (await store.get('ETH'))?.amount || 0,
     };
     await tx.done;
     return wallet;
