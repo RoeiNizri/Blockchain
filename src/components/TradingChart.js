@@ -25,33 +25,14 @@ const TradingChart = ({ symbol, orders }) => {
                     enable_publishing: false,
                     allow_symbol_change: true,
                     autosize: true,
-                    studies: ['Moving Average', 'Volume','MA Cross' ], 
                     onChartReady: () => {
                         console.log('Chart is ready');
-                        addStudies(chartWidget);
                     },
                 });
             } else {
                 console.error('Container or TradingView is not available');
                 retryCreateWidget();
             }
-        };
-
-        const addStudies = (widget) => {
-            if (!widget || typeof widget.chart !== 'function') return;
-
-            const chart = widget.chart();
-
-            chart.createStudy('Moving Average', false, false, [5, 10, 15], null, {
-                'Plot.color': 'blue',
-            });
-            chart.createStudy('Volume', false, false, null, null, {
-                'Plot.color': 'red',
-            });
-            chart.createStudy('MA Cross', false, false, [9, 21], null, {
-                'Plot.linewidth': 2,
-                'Plot.color': 'green',
-            });
         };
 
         const retryCreateWidget = () => {
