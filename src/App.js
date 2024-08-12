@@ -4,7 +4,7 @@ import OrderBook from './components/OrderBook';
 import Wallet from './components/Wallet';
 import { getCryptoPrice, getCryptoData } from './services/cryptoService';
 import { connectWebSocket } from './services/webSocketService';
-import { saveOrder, getOrders, deleteAllOrders } from './services/indexedDBService'; // Import IndexedDB functions
+import { saveOrder, getOrders, deleteAllOrders, saveWallet, getWallet, deleteWallet } from './services/indexedDBService'; // Import IndexedDB functions
 import './App.css';
 
 const App = () => {
@@ -40,6 +40,14 @@ const App = () => {
     }, [wallet, price, calculateTotalBalance]);
 
     useEffect(() => {
+        const loadWallet = async () => {
+            const savedWallet = await getWallet();
+            setWallet(savedWallet);
+        };
+        loadWallet();
+    }, []);
+
+    useEffect(() => {
         const loadOrders = async () => {
             const savedOrders = await getOrders();
             setOrders(savedOrders);
@@ -56,6 +64,13 @@ const App = () => {
         };
         saveOrders();
     }, [orders]);
+
+    useEffect(() => {
+        const saveWalletData = async () => {
+            await saveWallet(wallet);
+        };
+        saveWalletData();
+    }, [wallet]);
 
     useEffect(() => {
         const fetchInitialPrices = async () => {
@@ -146,6 +161,7 @@ const App = () => {
         setWallet(initialWallet);
         setOrders([]);
         deleteAllOrders(); // Clear the IndexedDB orders store
+        deleteWallet(); // Clear the IndexedDB wallet store
     };
 
     const checkLimitOrders = useCallback((currentPrices) => {
