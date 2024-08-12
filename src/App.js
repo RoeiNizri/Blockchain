@@ -36,21 +36,16 @@ const App = () => {
     }, [wallet, price]);
     
     useEffect(() => {
-        if (price.BTC !== 0 && price.ETH !== 0) {
-            calculateTotalBalance();
-        }
-    }, [wallet, price, calculateTotalBalance]);
-    
-
-    useEffect(() => {
         const loadWallet = async () => {
             const savedWallet = await getWallet();
             if (!savedWallet || Object.keys(savedWallet).length === 0) {
-                setWallet({
+                const initialWallet = {
                     USDT: 1000000,
                     BTC: 0,
                     ETH: 0
-                });
+                };
+                setWallet(initialWallet);
+                await saveWallet(initialWallet); // Save the initial wallet to IndexedDB
             } else {
                 setWallet(savedWallet);
             }
@@ -58,6 +53,12 @@ const App = () => {
         loadWallet();
     }, []);
     
+    useEffect(() => {
+        if (wallet && price.BTC !== 0 && price.ETH !== 0) {
+            calculateTotalBalance();
+        }
+    }, [wallet, price, calculateTotalBalance]);
+
     useEffect(() => {
         const loadOrders = async () => {
             const savedOrders = await getOrders();
