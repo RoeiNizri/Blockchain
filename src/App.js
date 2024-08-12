@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import TradingChart from './components/TradingChart';
 import OrderBook from './components/OrderBook';
