@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/Blockchain/static/css/main.3b398cda.css",
-    "main.js": "/Blockchain/static/js/main.9772274f.js",
+    "main.js": "/Blockchain/static/js/main.cc5476d5.js",
     "index.html": "/Blockchain/index.html",
     "main.3b398cda.css.map": "/Blockchain/static/css/main.3b398cda.css.map",
-    "main.9772274f.js.map": "/Blockchain/static/js/main.9772274f.js.map"
+    "main.cc5476d5.js.map": "/Blockchain/static/js/main.cc5476d5.js.map"
   },
   "entrypoints": [
     "static/css/main.3b398cda.css",
-    "static/js/main.9772274f.js"
+    "static/js/main.cc5476d5.js"
   ]
 }
