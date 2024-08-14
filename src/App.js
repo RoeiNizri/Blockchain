@@ -30,8 +30,10 @@ const App = () => {
             const savedWallet = await getWallet();
             if (!savedWallet || Object.keys(savedWallet).every(key => savedWallet[key] === 0)) {
                 // Save the initial state of the wallet to IndexedDB
-                setWallet(wallet); // Trigger a state update
-                await saveWallet(wallet);
+                setWallet(currentWallet => {
+                    saveWallet(currentWallet); // Save the wallet to IndexedDB
+                    return currentWallet; // Return the current wallet state
+                });
             } else {
                 setWallet(savedWallet);
             }
@@ -45,6 +47,7 @@ const App = () => {
         };
         saveWalletData();
     }, [wallet]); // Save the wallet whenever it changes
+    
 
     useEffect(() => {
         const loadOrders = async () => {
@@ -263,35 +266,30 @@ const App = () => {
                         />
                     </label>
                     <label>
-                        Amount:
-                        <input
-                            type="number"
-                            value={amount === 0 ? '' : amount}
-                            onChange={e => {
-                                const value = e.target.value;
-                                if (value === '' || Number(value) === 0) {
-                                    setAmount(value);
-                                } else if (Number(value) > 0) {
-                                    const decimalPattern = /^(\d+)(\.?)(\d*)$/;
-                                    const match = value.match(decimalPattern);
-                                    if (match) {
-                                        const integerPart = match[1];
-                                        const decimalPoint = match[2];
-                                        const fractionalPart = match[3];
+    Amount:
+    <input
+        type="number"
+        value={amount === 0 ? '' : amount}
+        onChange={e => {
+            const value = e.target.value;
+            if (value === '') {
+                setAmount('');
+            } else {
+                // Directly parse the value as a floating-point number
+                const parsedValue = parseFloat(value);
+                
+                // Check if the parsed value is a valid number and greater than zero
+                if (!isNaN(parsedValue) && parsedValue > 0) {
+                    setAmount(parsedValue);
+                } else {
+                    setAmount(0);
+                }
+            }
+        }}
+        placeholder="0.0"
+    />
+</label>
 
-                                        const isOnlyZeros = fractionalPart && fractionalPart.split('').every(digit => digit === '0');
-
-                                        if (decimalPoint && fractionalPart && !isOnlyZeros) {
-                                            setAmount(`${integerPart}${decimalPoint}${fractionalPart}`);
-                                        } else {
-                                            setAmount(Number(value));
-                                        }
-                                    }
-                                }
-                            }}
-                            placeholder="0.0"
-                        />
-                    </label>
                     <label>
                         Total:
                         <input
