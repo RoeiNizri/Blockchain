@@ -4,7 +4,7 @@ import OrderBook from './components/OrderBook';
 import Wallet from './components/Wallet';
 import { getCryptoPrice, getCryptoData } from './services/cryptoService';
 import { connectWebSocket } from './services/webSocketService';
-import { saveOrder, getOrders, deleteAllOrders, saveWallet, getWallet, deleteWallet } from './services/indexedDBService'; // Import IndexedDB functions
+import { saveOrder, getOrders, deleteAllOrders, saveWallet, getWallet, deleteWallet } from './services/indexedDBService';
 import './App.css';
 
 const App = () => {
@@ -31,25 +31,23 @@ const App = () => {
         const loadWallet = async () => {
             const savedWallet = await getWallet();
             if (!savedWallet || Object.keys(savedWallet).every(key => savedWallet[key] === 0)) {
-                // Save the initial state of the wallet to IndexedDB
                 setWallet(currentWallet => {
-                    saveWallet(currentWallet); // Save the wallet to IndexedDB
-                    return currentWallet; // Return the current wallet state
+                    saveWallet(currentWallet);
+                    return currentWallet;
                 });
             } else {
                 setWallet(savedWallet);
             }
         };
         loadWallet();
-    }, []); // Only run this effect on mount
-    
+    }, []);
+
     useEffect(() => {
         const saveWalletData = async () => {
             await saveWallet(wallet);
         };
         saveWalletData();
-    }, [wallet]); // Save the wallet whenever it changes
-    
+    }, [wallet]);
 
     useEffect(() => {
         const loadOrders = async () => {
@@ -67,7 +65,7 @@ const App = () => {
 
     useEffect(() => {
         const saveOrders = async () => {
-            await deleteAllOrders(); // Clear previous orders
+            await deleteAllOrders();
             for (const order of orders) {
                 await saveOrder(order);
             }
@@ -80,9 +78,9 @@ const App = () => {
         const shortTermMA = data.short_term_moving_average;
         const longTermMA = data.long_term_moving_average;
         const rsi = data.relative_strength_index;
-    
+
         const reasons = [];
-    
+
         if (volumeMultiplier >= 5) reasons.push('High volume spike detected');
         if (shortTermMA > longTermMA) reasons.push('Golden Cross detected');
         else if (shortTermMA < longTermMA) reasons.push('Death Cross detected');
@@ -92,7 +90,7 @@ const App = () => {
         else if (data.price_change_percentage_24h <= -5) reasons.push('Price decreased by 5% or more in the last 24 hours');
         if (data.price > data.resistance_level) reasons.push('Price broke above resistance level');
         else if (data.price < data.support_level) reasons.push('Price dropped below support level');
-    
+
         if (reasons.includes('Golden Cross detected') ||
             reasons.includes('Price increased by 5% or more in the last 24 hours') ||
             reasons.includes('High volume spike detected') ||
@@ -107,11 +105,11 @@ const App = () => {
             return `HOLD - ${reasons.length > 0 ? reasons.join(', ') : 'No significant signals detected'}`;
         }
     };
-    
+
     useEffect(() => {
         const controller = new AbortController();
         const signal = controller.signal;
-    
+
         const fetchInitialPrices = async () => {
             try {
                 const prices = await getCryptoPrice(['bitcoin', 'ethereum'], ['usd'], { signal });
@@ -119,7 +117,7 @@ const App = () => {
                     BTC: prices.bitcoin.usd,
                     ETH: prices.ethereum.usd
                 });
-    
+
                 const cryptoData = await getCryptoData(selectedSymbol === 'BTC' ? 'bitcoin' : 'ethereum', { signal });
                 if (cryptoData && cryptoData[0]) {
                     setRecommendation(analyzeCryptoData(cryptoData[0]));
@@ -130,22 +128,20 @@ const App = () => {
                 }
             }
         };
-    
+
         fetchInitialPrices();
-    
+
         return () => {
-            controller.abort(); // Cleanup fetch if the component unmounts
+            controller.abort();
         };
     }, [selectedSymbol]);
-    
-    
 
     const resetWallet = () => {
         const initialWallet = { USDT: 1000000, BTC: 0, ETH: 0 };
         setWallet(initialWallet);
         setOrders([]);
-        deleteAllOrders(); // Clear the IndexedDB orders store
-        deleteWallet(); // Clear the IndexedDB wallet store
+        deleteAllOrders();
+        deleteWallet();
     };
 
     const checkLimitOrders = useCallback((currentPrices) => {
@@ -179,25 +175,29 @@ const App = () => {
     }, [wallet, orders]);
 
     useEffect(() => {
-        const socket = connectWebSocket((data) => {
-            const symbolData = data[selectedSymbol];
-            if (symbolData) {
-                const currentPrice = parseFloat(symbolData.p).toFixed(2);
-                setPrice((prevPrice) => ({
-                    ...prevPrice,
-                    [selectedSymbol]: currentPrice
-                }));
+        let socket;
 
-                checkLimitOrders({ [selectedSymbol]: parseFloat(currentPrice) });
+        const connectSocket = () => {
+            if (!socket || socket.readyState === WebSocket.CLOSED) {
+                socket = connectWebSocket((data) => {
+                    const symbolData = data[selectedSymbol];
+                    if (symbolData) {
+                        const currentPrice = parseFloat(symbolData.p).toFixed(2);
+                        setPrice((prevPrice) => ({
+                            ...prevPrice,
+                            [selectedSymbol]: currentPrice
+                        }));
+
+                        checkLimitOrders({ [selectedSymbol]: parseFloat(currentPrice) });
+                    }
+                });
             }
-        });
-
-        socket.onerror = (error) => {
-            console.error('WebSocket error:', error);
         };
 
+        connectSocket();
+
         return () => {
-            if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
+            if (socket) {
                 socket.close();
             }
         };
@@ -206,17 +206,17 @@ const App = () => {
     const handleOrder = (type) => {
         const orderPrice = parseFloat(orderType === 'market' ? price[selectedSymbol] : limitPrice[selectedSymbol] || 0);
         const total = orderPrice * amount;
-    
+
         if (amount <= 0) {
             alert('Amount must be positive and greater than zero!');
             return;
         }
-    
+
         if (orderPrice <= 0) {
             alert('Price must be positive and greater than zero!');
             return;
         }
-    
+
         const newWallet = { ...wallet };
         const newOrder = {
             type,
@@ -227,7 +227,7 @@ const App = () => {
             orderType,
             status: 'PENDING'
         };
-    
+
         if (orderType === 'market') {
             if (type === 'buy' && newWallet.USDT >= total) {
                 newWallet.USDT -= total;
@@ -247,18 +247,16 @@ const App = () => {
                 return;
             }
         }
-    
+
         setWallet(newWallet);
         setOrders([...orders, newOrder]);
         setOrderMessage(`Order ${newOrder.status} - ${type.toUpperCase()} ${newOrder.amount} ${newOrder.symbol} at ${newOrder.price} USDT`);
         setShowOrderPopup(true);
-    
-        // Automatically hide the popup after 3 seconds
+
         setTimeout(() => {
             setShowOrderPopup(false);
         }, 3000);
     };
-    
 
     return (
         <div className="App">
@@ -304,10 +302,7 @@ const App = () => {
                                 if (value === '') {
                                     setAmount('');
                                 } else {
-                                    // Directly parse the value as a floating-point number
                                     const parsedValue = parseFloat(value);
-
-                                    // Check if the parsed value is a valid number and greater than zero
                                     if (!isNaN(parsedValue) && parsedValue > 0) {
                                         setAmount(parsedValue);
                                     } else {

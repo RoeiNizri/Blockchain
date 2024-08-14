@@ -5,8 +5,14 @@ export const connectWebSocket = (onMessage) => {
     let socket;
     let reconnectAttempts = 0;
     let reconnectTimeout;
+    let manualClose = false;
 
     const connect = () => {
+        if (socket && socket.readyState !== WebSocket.CLOSED) {
+            console.log("WebSocket already open or in the process of opening.");
+            return;
+        }
+
         socket = new WebSocket(wsURL);
 
         socket.onopen = () => {
@@ -27,7 +33,7 @@ export const connectWebSocket = (onMessage) => {
             console.log(`WebSocket connection closed (code: ${event.code}, reason: ${event.reason}).`);
 
             // Handle closure based on whether it was intentional or not
-            if (!event.wasClean && reconnectAttempts < maxReconnectAttempts) {
+            if (!manualClose && !event.wasClean && reconnectAttempts < maxReconnectAttempts) {
                 reconnectAttempts++;
                 const reconnectDelay = Math.min(1000 * 2 ** reconnectAttempts, 30000); // Exponential backoff capped at 30 seconds
                 console.log(`Reconnecting WebSocket in ${reconnectDelay / 1000} seconds...`);
@@ -46,12 +52,14 @@ export const connectWebSocket = (onMessage) => {
 
     return {
         close: () => {
+            manualClose = true;
             if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
                 socket.close();
             }
             clearTimeout(reconnectTimeout); // Clear any pending reconnection attempts
         },
         disconnect: () => {
+            manualClose = true;
             if (socket) {
                 socket.close();
             }
@@ -59,6 +67,7 @@ export const connectWebSocket = (onMessage) => {
         },
     };
 };
+
 
 export const fetchSymbols = async (retries = 3) => {
     const controller = new AbortController(); // Create a new AbortController instance
