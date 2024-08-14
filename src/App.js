@@ -17,6 +17,8 @@ const App = () => {
     const [selectedSymbol, setSelectedSymbol] = useState('BTC');
     const [recommendation, setRecommendation] = useState('');
     const [totalBalance, setTotalBalance] = useState(0);
+    const [showOrderPopup, setShowOrderPopup] = useState(false);
+    const [orderMessage, setOrderMessage] = useState('');
 
     const calculateTotalBalance = useCallback(() => {
         const btcValueInUSDT = (wallet.BTC || 0) * (price.BTC || 0);
@@ -73,56 +75,70 @@ const App = () => {
         saveOrders();
     }, [orders]);
 
+    const analyzeCryptoData = (data) => {
+        const volumeMultiplier = data.total_volume / data.prev_24h_volume;
+        const shortTermMA = data.short_term_moving_average;
+        const longTermMA = data.long_term_moving_average;
+        const rsi = data.relative_strength_index;
+    
+        const reasons = [];
+    
+        if (volumeMultiplier >= 5) reasons.push('High volume spike detected');
+        if (shortTermMA > longTermMA) reasons.push('Golden Cross detected');
+        else if (shortTermMA < longTermMA) reasons.push('Death Cross detected');
+        if (rsi >= 70) reasons.push('RSI indicates overbought conditions');
+        else if (rsi <= 30) reasons.push('RSI indicates oversold conditions');
+        if (data.price_change_percentage_24h >= 5) reasons.push('Price increased by 5% or more in the last 24 hours');
+        else if (data.price_change_percentage_24h <= -5) reasons.push('Price decreased by 5% or more in the last 24 hours');
+        if (data.price > data.resistance_level) reasons.push('Price broke above resistance level');
+        else if (data.price < data.support_level) reasons.push('Price dropped below support level');
+    
+        if (reasons.includes('Golden Cross detected') ||
+            reasons.includes('Price increased by 5% or more in the last 24 hours') ||
+            reasons.includes('High volume spike detected') ||
+            reasons.includes('Price broke above resistance level')) {
+            return `BUY - ${reasons.join(', ')}`;
+        } else if (reasons.includes('Death Cross detected') ||
+            reasons.includes('Price decreased by 5% or more in the last 24 hours') ||
+            reasons.includes('RSI indicates overbought conditions') ||
+            reasons.includes('Price dropped below support level')) {
+            return `SELL - ${reasons.join(', ')}`;
+        } else {
+            return `HOLD - ${reasons.length > 0 ? reasons.join(', ') : 'No significant signals detected'}`;
+        }
+    };
+    
     useEffect(() => {
+        const controller = new AbortController();
+        const signal = controller.signal;
+    
         const fetchInitialPrices = async () => {
             try {
-                const prices = await getCryptoPrice(['bitcoin', 'ethereum'], ['usd']);
+                const prices = await getCryptoPrice(['bitcoin', 'ethereum'], ['usd'], { signal });
                 setPrice({
                     BTC: prices.bitcoin.usd,
                     ETH: prices.ethereum.usd
                 });
-
-                const cryptoData = await getCryptoData(selectedSymbol === 'BTC' ? 'bitcoin' : 'ethereum');
+    
+                const cryptoData = await getCryptoData(selectedSymbol === 'BTC' ? 'bitcoin' : 'ethereum', { signal });
                 if (cryptoData && cryptoData[0]) {
-                    const data = cryptoData[0];
-                    const volumeMultiplier = data.total_volume / data.prev_24h_volume;
-                    const shortTermMA = data.short_term_moving_average;
-                    const longTermMA = data.long_term_moving_average;
-                    const rsi = data.relative_strength_index;
-
-                    const reasons = [];
-
-                    if (volumeMultiplier >= 5) reasons.push('High volume spike detected');
-                    if (shortTermMA > longTermMA) reasons.push('Golden Cross detected');
-                    else if (shortTermMA < longTermMA) reasons.push('Death Cross detected');
-                    if (rsi >= 70) reasons.push('RSI indicates overbought conditions');
-                    else if (rsi <= 30) reasons.push('RSI indicates oversold conditions');
-                    if (data.price_change_percentage_24h >= 5) reasons.push('Price increased by 5% or more in the last 24 hours');
-                    else if (data.price_change_percentage_24h <= -5) reasons.push('Price decreased by 5% or more in the last 24 hours');
-                    if (data.price > data.resistance_level) reasons.push('Price broke above resistance level');
-                    else if (data.price < data.support_level) reasons.push('Price dropped below support level');
-
-                    if (reasons.includes('Golden Cross detected') ||
-                        reasons.includes('Price increased by 5% or more in the last 24 hours') ||
-                        reasons.includes('High volume spike detected') ||
-                        reasons.includes('Price broke above resistance level')) {
-                        setRecommendation(`BUY - ${reasons.join(', ')}`);
-                    } else if (reasons.includes('Death Cross detected') ||
-                        reasons.includes('Price decreased by 5% or more in the last 24 hours') ||
-                        reasons.includes('RSI indicates overbought conditions') ||
-                        reasons.includes('Price dropped below support level')) {
-                        setRecommendation(`SELL - ${reasons.join(', ')}`);
-                    } else {
-                        setRecommendation(`HOLD - ${reasons.length > 0 ? reasons.join(', ') : 'No significant signals detected'}`);
-                    }
+                    setRecommendation(analyzeCryptoData(cryptoData[0]));
                 }
             } catch (error) {
-                console.error('Error fetching initial prices or recommendation data:', error);
+                if (error.name !== 'AbortError') {
+                    console.error('Error fetching initial prices or recommendation data:', error);
+                }
             }
         };
-
+    
         fetchInitialPrices();
+    
+        return () => {
+            controller.abort(); // Cleanup fetch if the component unmounts
+        };
     }, [selectedSymbol]);
+    
+    
 
     const resetWallet = () => {
         const initialWallet = { USDT: 1000000, BTC: 0, ETH: 0 };
@@ -190,12 +206,17 @@ const App = () => {
     const handleOrder = (type) => {
         const orderPrice = parseFloat(orderType === 'market' ? price[selectedSymbol] : limitPrice[selectedSymbol] || 0);
         const total = orderPrice * amount;
-
+    
         if (amount <= 0) {
-            alert('Amount must be positive!');
+            alert('Amount must be positive and greater than zero!');
             return;
         }
-
+    
+        if (orderPrice <= 0) {
+            alert('Price must be positive and greater than zero!');
+            return;
+        }
+    
         const newWallet = { ...wallet };
         const newOrder = {
             type,
@@ -206,7 +227,7 @@ const App = () => {
             orderType,
             status: 'PENDING'
         };
-
+    
         if (orderType === 'market') {
             if (type === 'buy' && newWallet.USDT >= total) {
                 newWallet.USDT -= total;
@@ -226,10 +247,18 @@ const App = () => {
                 return;
             }
         }
-
+    
         setWallet(newWallet);
         setOrders([...orders, newOrder]);
+        setOrderMessage(`Order ${newOrder.status} - ${type.toUpperCase()} ${newOrder.amount} ${newOrder.symbol} at ${newOrder.price} USDT`);
+        setShowOrderPopup(true);
+    
+        // Automatically hide the popup after 3 seconds
+        setTimeout(() => {
+            setShowOrderPopup(false);
+        }, 3000);
     };
+    
 
     return (
         <div className="App">
@@ -266,29 +295,29 @@ const App = () => {
                         />
                     </label>
                     <label>
-    Amount:
-    <input
-        type="number"
-        value={amount === 0 ? '' : amount}
-        onChange={e => {
-            const value = e.target.value;
-            if (value === '') {
-                setAmount('');
-            } else {
-                // Directly parse the value as a floating-point number
-                const parsedValue = parseFloat(value);
-                
-                // Check if the parsed value is a valid number and greater than zero
-                if (!isNaN(parsedValue) && parsedValue > 0) {
-                    setAmount(parsedValue);
-                } else {
-                    setAmount(0);
-                }
-            }
-        }}
-        placeholder="0.0"
-    />
-</label>
+                        Amount:
+                        <input
+                            type="number"
+                            value={amount === 0 ? '' : amount}
+                            onChange={e => {
+                                const value = e.target.value;
+                                if (value === '') {
+                                    setAmount('');
+                                } else {
+                                    // Directly parse the value as a floating-point number
+                                    const parsedValue = parseFloat(value);
+
+                                    // Check if the parsed value is a valid number and greater than zero
+                                    if (!isNaN(parsedValue) && parsedValue > 0) {
+                                        setAmount(parsedValue);
+                                    } else {
+                                        setAmount(0);
+                                    }
+                                }
+                            }}
+                            placeholder="0.0"
+                        />
+                    </label>
 
                     <label>
                         Total:
@@ -316,6 +345,12 @@ const App = () => {
             </div>
             <TradingChart symbol={`BINANCE:${selectedSymbol}USDT`} orders={orders} />
             <OrderBook orders={orders} prices={price} />
+
+            {showOrderPopup && (
+                <div className="order-popup">
+                    <p>{orderMessage}</p>
+                </div>
+            )}
         </div>
     );
 };
