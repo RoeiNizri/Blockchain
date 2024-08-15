@@ -78,25 +78,31 @@ const App = () => {
         const shortTermMA = data.short_term_moving_average;
         const longTermMA = data.long_term_moving_average;
         const rsi = data.relative_strength_index;
-        const macd = data.macd; // Moving Average Convergence Divergence
-        const signalLine = data.signal_line; // Signal line for MACD
-        const bollingerBands = data.bollinger_bands; // Array with [lowerBand, middleBand, upperBand]
-        const stochasticK = data.stochastic_k; // Stochastic oscillator %K
-        const stochasticD = data.stochastic_d; // Stochastic oscillator %D
+        const macd = data.macd;
+        const signalLine = data.signal_line;
+        
+        // Ensure bollinger_bands is defined and has the necessary elements
+        const bollingerBands = Array.isArray(data.bollinger_bands) && data.bollinger_bands.length === 3 
+            ? data.bollinger_bands 
+            : [0, 0, 0]; // Default to [0, 0, 0] if not defined or insufficient length
+    
+        const stochasticK = data.stochastic_k;
+        const stochasticD = data.stochastic_d;
     
         const reasons = [];
     
-        // Ensure past_volumes is defined and is an array
         const pastVolumes = Array.isArray(data.past_volumes) ? data.past_volumes : [];
     
-        // Track consecutive high volumes
-        const highBuyVolumeStreak = pastVolumes.reduce((streak, volume) => 
-            volume.buyVolume >= 5000 ? streak + 1 : 0, 0);
+        const highBuyVolumeStreak = pastVolumes.reduce((streak, volume) => {
+            console.log(`Buy Volume: ${volume.buyVolume}, Streak: ${streak}`);
+            return volume.buyVolume >= 5000 ? streak + 1 : 0;
+        }, 0);
     
-        const highSellVolumeStreak = pastVolumes.reduce((streak, volume) => 
-            volume.sellVolume >= 5000 ? streak + 1 : 0, 0);
+        const highSellVolumeStreak = pastVolumes.reduce((streak, volume) => {
+            console.log(`Sell Volume: ${volume.sellVolume}, Streak: ${streak}`);
+            return volume.sellVolume >= 5000 ? streak + 1 : 0;
+        }, 0);
     
-        // STRONG SELL/BUY Logic
         if (highBuyVolumeStreak >= 4 && rsi >= 70) {
             reasons.push('High buy volume for four consecutive days', 'RSI indicates overbought conditions');
             return `STRONG SELL - ${reasons.join(', ')}`;
@@ -106,7 +112,6 @@ const App = () => {
             return `STRONG BUY - ${reasons.join(', ')}`;
         }
     
-        // Standard Indicator Logic
         if (volumeMultiplier >= 5) reasons.push('High volume spike detected');
         if (shortTermMA > longTermMA) reasons.push('Golden Cross detected');
         else if (shortTermMA < longTermMA) reasons.push('Death Cross detected');
@@ -117,7 +122,6 @@ const App = () => {
         if (data.price > data.resistance_level) reasons.push('Price broke above resistance level');
         else if (data.price < data.support_level) reasons.push('Price dropped below support level');
     
-        // Additional Indicators
         if (macd > signalLine) reasons.push('MACD is above the signal line (Bullish)');
         else if (macd < signalLine) reasons.push('MACD is below the signal line (Bearish)');
     
@@ -127,7 +131,6 @@ const App = () => {
         if (stochasticK > 80 && stochasticD > 80) reasons.push('Stochastic indicates overbought conditions');
         else if (stochasticK < 20 && stochasticD < 20) reasons.push('Stochastic indicates oversold conditions');
     
-        // Refined SELL/BUY/HOLD Recommendations
         if ((reasons.includes('Golden Cross detected') ||
              reasons.includes('Price increased by 5% or more in the last 24 hours') ||
              reasons.includes('High volume spike detected') ||
@@ -146,20 +149,21 @@ const App = () => {
             return `HOLD - ${reasons.length > 0 ? reasons.join(', ') : 'No significant signals detected'}`;
         }
     };    
+    
 
     useEffect(() => {
         const controller = new AbortController();
         const signal = controller.signal;
-
+    
         const fetchInitialPrices = async () => {
             try {
-                const prices = await getCryptoPrice(['bitcoin', 'ethereum'], ['usd'], { signal });
+                const prices = await getCryptoPrice(['bitcoin', 'ethereum'], ['usd'], signal);
                 setPrice({
                     BTC: prices.bitcoin.usd,
                     ETH: prices.ethereum.usd
                 });
-
-                const cryptoData = await getCryptoData(selectedSymbol === 'BTC' ? 'bitcoin' : 'ethereum', { signal });
+    
+                const cryptoData = await getCryptoData(selectedSymbol === 'BTC' ? 'bitcoin' : 'ethereum', signal);
                 if (cryptoData && cryptoData[0]) {
                     setRecommendation(analyzeCryptoData(cryptoData[0]));
                 }
@@ -169,13 +173,13 @@ const App = () => {
                 }
             }
         };
-
+    
         fetchInitialPrices();
-
+    
         return () => {
-            controller.abort();
+            controller.abort(); // Abort the request when the component unmounts or dependencies change
         };
-    }, [selectedSymbol]);
+    }, [selectedSymbol]);    
 
     const resetWallet = () => {
         const initialWallet = { USDT: 1000000, BTC: 0, ETH: 0 };

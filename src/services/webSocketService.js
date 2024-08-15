@@ -8,7 +8,7 @@ export const connectWebSocket = (onMessage) => {
     let manualClose = false;
 
     const connect = () => {
-        if (socket && socket.readyState !== WebSocket.CLOSED) {
+        if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
             console.log("WebSocket already open or in the process of opening.");
             return;
         }
@@ -29,11 +29,14 @@ export const connectWebSocket = (onMessage) => {
             }
         };
 
+        socket.onerror = (error) => {
+            console.error('WebSocket error:', error);
+        };
+
         socket.onclose = (event) => {
             console.log(`WebSocket connection closed (code: ${event.code}, reason: ${event.reason}).`);
 
-            // Handle closure based on whether it was intentional or not
-            if (!manualClose && !event.wasClean && reconnectAttempts < maxReconnectAttempts) {
+            if (!manualClose && reconnectAttempts < maxReconnectAttempts) {
                 reconnectAttempts++;
                 const reconnectDelay = Math.min(1000 * 2 ** reconnectAttempts, 30000); // Exponential backoff capped at 30 seconds
                 console.log(`Reconnecting WebSocket in ${reconnectDelay / 1000} seconds...`);
@@ -42,13 +45,10 @@ export const connectWebSocket = (onMessage) => {
                 console.error('Max reconnect attempts reached. No longer attempting to reconnect.');
             }
         };
-
-        socket.onerror = (error) => {
-            console.error('WebSocket error:', error);
-        };
     };
 
-    connect();
+    // Add a small initial delay before the first connection attempt
+    setTimeout(connect, 500);
 
     return {
         close: () => {
@@ -66,33 +66,4 @@ export const connectWebSocket = (onMessage) => {
             clearTimeout(reconnectTimeout); // Clear any pending reconnection attempts
         },
     };
-};
-
-
-export const fetchSymbols = async (retries = 3) => {
-    const controller = new AbortController(); // Create a new AbortController instance
-    const signal = controller.signal;
-
-    try {
-        const response = await fetch('https://mtickers.mtw-testnet.com/symbols', { signal });
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        if (error.name === 'AbortError') {
-            console.log('Fetch request was aborted');
-        } else {
-            console.error('Error fetching symbols:', error);
-            if (retries > 0) {
-                console.log(`Retrying fetchSymbols... Attempts left: ${retries - 1}`);
-                return fetchSymbols(retries - 1); // Retry the fetch with one less retry count
-            } else {
-                throw error; // Rethrow after exhausting retries
-            }
-        }
-    } finally {
-        controller.abort(); // Clean up the controller
-    }
 };
