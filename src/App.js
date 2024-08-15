@@ -78,9 +78,35 @@ const App = () => {
         const shortTermMA = data.short_term_moving_average;
         const longTermMA = data.long_term_moving_average;
         const rsi = data.relative_strength_index;
-
+        const macd = data.macd; // Moving Average Convergence Divergence
+        const signalLine = data.signal_line; // Signal line for MACD
+        const bollingerBands = data.bollinger_bands; // Array with [lowerBand, middleBand, upperBand]
+        const stochasticK = data.stochastic_k; // Stochastic oscillator %K
+        const stochasticD = data.stochastic_d; // Stochastic oscillator %D
+    
         const reasons = [];
-
+    
+        // Ensure past_volumes is defined and is an array
+        const pastVolumes = Array.isArray(data.past_volumes) ? data.past_volumes : [];
+    
+        // Track consecutive high volumes
+        const highBuyVolumeStreak = pastVolumes.reduce((streak, volume) => 
+            volume.buyVolume >= 5000 ? streak + 1 : 0, 0);
+    
+        const highSellVolumeStreak = pastVolumes.reduce((streak, volume) => 
+            volume.sellVolume >= 5000 ? streak + 1 : 0, 0);
+    
+        // STRONG SELL/BUY Logic
+        if (highBuyVolumeStreak >= 4 && rsi >= 70) {
+            reasons.push('High buy volume for four consecutive days', 'RSI indicates overbought conditions');
+            return `STRONG SELL - ${reasons.join(', ')}`;
+        } 
+        if (highSellVolumeStreak >= 4 && rsi <= 30) {
+            reasons.push('High sell volume for four consecutive days', 'RSI indicates oversold conditions');
+            return `STRONG BUY - ${reasons.join(', ')}`;
+        }
+    
+        // Standard Indicator Logic
         if (volumeMultiplier >= 5) reasons.push('High volume spike detected');
         if (shortTermMA > longTermMA) reasons.push('Golden Cross detected');
         else if (shortTermMA < longTermMA) reasons.push('Death Cross detected');
@@ -90,21 +116,36 @@ const App = () => {
         else if (data.price_change_percentage_24h <= -5) reasons.push('Price decreased by 5% or more in the last 24 hours');
         if (data.price > data.resistance_level) reasons.push('Price broke above resistance level');
         else if (data.price < data.support_level) reasons.push('Price dropped below support level');
-
-        if (reasons.includes('Golden Cross detected') ||
-            reasons.includes('Price increased by 5% or more in the last 24 hours') ||
-            reasons.includes('High volume spike detected') ||
-            reasons.includes('Price broke above resistance level')) {
-            return `BUY - ${reasons.join(', ')}`;
-        } else if (reasons.includes('Death Cross detected') ||
-            reasons.includes('Price decreased by 5% or more in the last 24 hours') ||
-            reasons.includes('RSI indicates overbought conditions') ||
-            reasons.includes('Price dropped below support level')) {
-            return `SELL - ${reasons.join(', ')}`;
+    
+        // Additional Indicators
+        if (macd > signalLine) reasons.push('MACD is above the signal line (Bullish)');
+        else if (macd < signalLine) reasons.push('MACD is below the signal line (Bearish)');
+    
+        if (data.price > bollingerBands[2]) reasons.push('Price is above upper Bollinger Band (Overbought)');
+        else if (data.price < bollingerBands[0]) reasons.push('Price is below lower Bollinger Band (Oversold)');
+    
+        if (stochasticK > 80 && stochasticD > 80) reasons.push('Stochastic indicates overbought conditions');
+        else if (stochasticK < 20 && stochasticD < 20) reasons.push('Stochastic indicates oversold conditions');
+    
+        // Refined SELL/BUY/HOLD Recommendations
+        if ((reasons.includes('Golden Cross detected') ||
+             reasons.includes('Price increased by 5% or more in the last 24 hours') ||
+             reasons.includes('High volume spike detected') ||
+             reasons.includes('Price broke above resistance level') ||
+             reasons.includes('MACD is above the signal line (Bullish)')) &&
+            !reasons.includes('Price is above upper Bollinger Band (Overbought)')) {
+            return `Be ready to SELL - ${reasons.join(', ')}`;
+        } else if ((reasons.includes('Death Cross detected') ||
+                    reasons.includes('Price decreased by 5% or more in the last 24 hours') ||
+                    reasons.includes('RSI indicates oversold conditions') ||
+                    reasons.includes('Price dropped below support level') ||
+                    reasons.includes('MACD is below the signal line (Bearish)')) &&
+                   !reasons.includes('Price is below lower Bollinger Band (Oversold)')) {
+            return `Be ready to BUY - ${reasons.join(', ')}`;
         } else {
             return `HOLD - ${reasons.length > 0 ? reasons.join(', ') : 'No significant signals detected'}`;
         }
-    };
+    };    
 
     useEffect(() => {
         const controller = new AbortController();
