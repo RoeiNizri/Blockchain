@@ -6,12 +6,13 @@ The BTS (Blockchain Trading System) - Demo Crypto Trading System is a web-based 
 
 **Features:**
 
-- **Graph Display:** The system integrates TradingView to display real-time price charts for selected cryptocurrencies, specifically BTC/USDT, ETH/USDT, SOL/USDT, BNB/USDT, and PEPE/USDT.
+- **Graph Display:** The system integrates TradingView to display real-time price charts for selected cryptocurrencies, specifically BTC/USDT and ETH/USD.
 - **Trade Execution:** Users can execute buy and sell orders (Market & Limit). All transactions are saved on the client side using IndexedDB.
 - **Portfolio Management:** Each user has a virtual wallet containing 1 million USDT for trading.
 - **Transaction History:** The system records all approved and pending transactions, with approved transactions marked in green and pending transactions in red.
 - **AI Chat Assistance:** A new AI-powered chat feature allows users to ask questions and receive real-time assistance regarding cryptocurrency trading, market trends, and system functionalities.
 - **Responsiveness:** The project is fully responsive and compatible with various devices, including smartphones and tablets.
+- **AI Assistance:** The system includes an AI-powered chat feature. This allows users to ask questions and receive real-time assistance regarding cryptocurrency trading and system functionalities.
 
 **Getting Started:**
 
