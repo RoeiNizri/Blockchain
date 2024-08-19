@@ -1,70 +1,75 @@
-# Getting Started with Create React App
+# BTS - Demo Crypto Trading System
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+**Project Description:**
 
-## Available Scripts
+The BTS (Blockchain Trading System) - Demo Crypto Trading System is a web-based application designed to simulate cryptocurrency trading. It aims to provide an accessible platform for newcomers to experience and understand cryptocurrency trading while allowing experienced traders to improve their strategies, conduct tests, and experiment with trading programs in a risk-free environment.
 
-In the project directory, you can run:
+**Features:**
 
-### `npm start`
+- **Graph Display:** The system integrates TradingView to display real-time price charts for selected cryptocurrencies, specifically BTC/USDT, ETH/USDT, SOL/USDT, BNB/USDT, and PEPE/USDT.
+- **Trade Execution:** Users can execute buy and sell orders (Market & Limit). All transactions are saved on the client side using IndexedDB.
+- **Portfolio Management:** Each user has a virtual wallet containing 1 million USDT for trading.
+- **Transaction History:** The system records all approved and pending transactions, with approved transactions marked in green and pending transactions in red.
+- **AI Chat Assistance:** A new AI-powered chat feature allows users to ask questions and receive real-time assistance regarding cryptocurrency trading, market trends, and system functionalities.
+- **Responsiveness:** The project is fully responsive and compatible with various devices, including smartphones and tablets.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+**Getting Started:**
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+To run this project locally:
 
-### `npm test`
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/RoeiNizri/Blockchain.git
+   cd Blockchain
+   ```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-### `npm run build`
+3. **Run the development server:**
+   ```bash
+   npm start
+   ```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+4. **Visit the application:**
+   Open your web browser and go to `http://localhost:3000` to see the application in action.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+**Deployment:**
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+The project is deployed and can be accessed at [BTS - Demo Crypto Trading System](https://roeinizri.com/BTS/)
 
-### `npm run eject`
+**Project Structure:**
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+```
+- public/
+- src/
+  - components/
+  - services/
+  - styles/
+  - App.js
+  - index.js
+- .gitignore
+- package.json
+- README.md
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+**Technologies Used:**
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+- **React.js** for building the user interface
+- **TradingView** for displaying cryptocurrency charts
+- **IndexedDB** for client-side storage
+- **Node.js** and **npm** for managing dependencies
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+**Contributing:**
 
-## Learn More
+Feel free to fork this repository and make your contributions. You can submit pull requests, and they will be reviewed promptly.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+**License:**
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-### Code Splitting
+**Contact:**
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+For any questions or feedback, please contact Roei Nizri at [roeinizri1@gmail.com](mailto:roeinizri1@gmail.com).
