@@ -39,20 +39,20 @@
   "screenshots": [
     {
       "src": "screenshot1.png",
-      "sizes": "1914x870",
+      "sizes": "1918x836",
       "type": "image/png",
       "label": "Homepage",
       "form_factor": "wide"
     },
     {
       "src": "screenshot2.png",
-      "sizes": "1914x870",
+      "sizes": "1918x836",
       "type": "image/png",
       "label": "Projects Page"
     },
     {
       "src": "screenshot3.png",
-      "sizes": "1914x870",
+      "sizes": "1918x836",
       "type": "image/png",
       "label": "Contact Page"
     }
