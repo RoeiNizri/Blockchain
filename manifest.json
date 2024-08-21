@@ -4,7 +4,7 @@
   "icons": [
     {
       "src": "favicon.ico",
-      "sizes": "16x16",
+      "sizes": "48x48",
       "type": "image/x-icon"
     },
     {
@@ -28,14 +28,14 @@
       "sizes": "512x512"
     }
   ],
-  "start_url": "/",
+  "start_url": "/BTS/",
   "display": "standalone",
   "theme_color": "#000000",
   "background_color": "#ffffff",
   "description": "Explore Roei Nizri's BTS Project, focusing on advanced blockchain technology and smart contracts. Discover the innovative solutions and approaches used in this project, along with a detailed overview of its features and capabilities.",
   "orientation": "portrait-primary",
   "lang": "en-US",
-  "scope": "/BTS/",
+  "scope": "/",
   "screenshots": [
     {
       "src": "screenshot1.png",
@@ -74,7 +74,7 @@
   "related_applications": [
     {
       "platform": "web",
-      "url": "https://roeinizri.com",
+      "url": "https://roeinizri.com/BTS/",
       "id": "roeinizri.web"
     }
   ],
